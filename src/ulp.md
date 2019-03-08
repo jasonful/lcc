@@ -1,5 +1,10 @@
 %{
-enum { R0=0, R1=1, R2=2, R3=3 };
+
+#define INTTMP 0x0000000F
+#define INTVAR 0x00000000
+#define FLTTMP 0x000f0ff0
+#define FLTVAR 0xfff00000
+
 #include "c.h"
 #define NODEPTR_TYPE Node
 #define OP_LABEL(p) ((p)->op)
@@ -190,13 +195,13 @@ addr: acon  "%0"
 addr: reg   "($%0)"
 addr: ADDRFP4  "%a+%F($sp)"
 addr: ADDRLP4  "%a+%F($sp)"
-reg: addr  "move $%c,%0\n"  1
+reg: addr  "move %c,%0\n"  1
 reg: CNSTI2  "# reg\n"  range(a, 0, 0)
 reg: CNSTU2  "# reg\n"  range(a, 0, 0)
-stmt: ASGNI2(addr,reg)  "st $%1,%0\n"  1
-stmt: ASGNU2(addr,reg)  "st $%1,%0\n"  1
-reg:  INDIRI2(addr)     "ld $%c,%0\n"  1
-reg:  INDIRU2(addr)     "ld $%c,%0\n"  1
+stmt: ASGNI2(addr,reg)  "st %1,%0\n"  1
+stmt: ASGNU2(addr,reg)  "st %1,%0\n"  1
+reg:  INDIRI2(addr)     "ld %c,%0\n"  1
+reg:  INDIRU2(addr)     "ld %c,%0\n"  1
 
 reg:  INDIRF2(addr)     ".error float not supported\n"  1
 stmt: ASGNF2(addr,reg)  ".error float not supported\n"  1
@@ -215,7 +220,7 @@ reg: ADDU2(reg,rc)   "add %c,%0,%1\n"  1
 reg: BANDI2(reg,rc)  "and %c,%0,%1\n"  1
 reg: BORI2(reg,rc)   "or  %c,%0,%1\n"    1
 reg: BXORI2(reg,rc)  "xor %c,%0,%1\n"   1
-reg: BANDU2(reg,rc)  "and %c,$%0,%1\n"   1
+reg: BANDU2(reg,rc)  "and %c,%0,%1\n"   1
 reg: BORU2(reg,rc)   "or %c,%0,%1\n"    1
 reg: BXORU2(reg,rc)  "xor %c,%0,%1\n"   1
 reg: SUBI2(reg,rc)   "subu %c,%0,%1\n"  1
@@ -228,9 +233,9 @@ reg: LSHI2(reg,rc5bit)  "lsh %c,%0,%1\n"  1
 reg: LSHU2(reg,rc5bit)  "lsh %c,%0,%1\n"  1
 reg: RSHI2(reg,rc5bit)  "rsh %c,%0,%1\n"  1
 reg: RSHU2(reg,rc5bit)  "rsh %c,%0,%1\n"  1
-reg: BCOMI2(reg)  ".error binary complement not supported\n"   1
-reg: BCOMU2(reg)  ".error binary complement not supported\n"   1
-reg: NEGI2(reg)   ".error negation no supported\n"  1
+reg: BCOMI2(reg)  "move %c, 0\nsub %c,%c,%0\nsub %c, %c, 1\n"   1
+reg: BCOMU2(reg)  "move %c, 0\nsub %c,%c,%0\nsub %c, %c, 1\n"   1
+reg: NEGI2(reg)   "move %c, 0\nsub %c,%c,%0\n"  1
 reg: LOADI2(reg)  "move %c,%0\n"  move(a)
 reg: LOADU2(reg)  "move %c,%0\n"  move(a)
 reg: ADDF2(reg,reg)  ".error floating point addition not supported\n"  1
@@ -248,10 +253,6 @@ reg: CVFI2(reg)  ".error floating point not supported\n"
 stmt: LABELV  "%a:\n"
 stmt: JUMPV(acon)  "jump %0\n"   1
 stmt: JUMPV(reg)   "jump %0\n" 
-
-
------
-
 stmt: EQI2(reg,reg)  "sub %0,%0,%1\njump %a, eq\n"   1
 stmt: EQU2(reg,reg)  "sub %0,%0,%1\njump %a, eq\n"   1
 stmt: GEI2(reg,reg)  "sub %0,%0,%1\njump %a, eq\njump %a, ov\n"   1
@@ -262,48 +263,39 @@ stmt: LEI2(reg,reg)  "sub %0,%1,%0\njump %a, eq\njump %a, ov\n"   1
 stmt: LEU2(reg,reg)  "sub %0,%1,%0\njump %a, eq\njump %a, ov\n"  1
 stmt: LTI2(reg,reg)  "sub %0,%1,%0\njump %a, ov\n"   1
 stmt: LTU2(reg,reg)  "sub %0,%1,%0\njump %a, ov\n"  1
-stmt: NEI2(reg,reg)  "sub %0,%0,%1\njumpr 4, eq\n"   1
-stmt: NEU2(reg,reg)  "bne %0,%1,%a\n"   1
-stmt: EQF2(reg,reg)  "c.eq.s f%0,f%1; bc1t %a\n"  2
-stmt: EQF8(reg,reg)  "c.eq.d f%0,f%1; bc1t %a\n"  2
-stmt: LEF2(reg,reg)  "c.ule.s f%0,f%1; bc1t %a\n"  2
-stmt: LEF8(reg,reg)  "c.ule.d f%0,f%1; bc1t %a\n"  2
-stmt: LTF2(reg,reg)  "c.ult.s f%0,f%1; bc1t %a\n"  2
-stmt: LTF8(reg,reg)  "c.ult.d f%0,f%1; bc1t %a\n"  2
-stmt: GEF2(reg,reg)  "c.lt.s f%0,f%1; bc1f %a\n"  2
-stmt: GEF8(reg,reg)  "c.lt.d f%0,f%1; bc1f %a\n"  2
-stmt: GTF2(reg,reg)  "c.le.s f%0,f%1; bc1f %a\n"  2
-stmt: GTF8(reg,reg)  "c.le.d f%0,f%1; bc1f %a\n"  2
-stmt: NEF2(reg,reg)  "c.eq.s f%0,$f%1; bc1f %a\n"  2
-stmt: NEF8(reg,reg)  "c.eq.d $f%0,$f%1; bc1f %a\n"  2
-ar:   ADDRGP4     "%a"
+stmt: NEI2(reg,reg)  "sub %0,%0,%1\njump %L, eq\njump %a\n%L:\n"   1
+stmt: NEU2(reg,reg)  "sub %0,%0,%1\njump %L, eq\njump %a\n%L:\n"   1
+stmt: EQF2(reg,reg)  ".error floating point not supported\n"  2
+stmt: LEF2(reg,reg)  ".error floating point not supported\n"  2
+stmt: LTF2(reg,reg)  ".error floating point not supported\n"  2
+stmt: GEF2(reg,reg)  ".error floating point not supported\n"  2
+stmt: GTF2(reg,reg)  ".error floating point not supported\n"  2
+stmt: NEF2(reg,reg)  ".error floating point not supported\n"  2
+ar:   ADDRGP2     "%a"
 
-reg:  CALLF4(ar)  "jal %0\n"  1
-reg:  CALLF8(ar)  "jal %0\n"  1
-reg:  CALLI4(ar)  "jal %0\n"  1
-reg:  CALLP4(ar)  "jal %0\n"  1
-reg:  CALLU4(ar)  "jal %0\n"  1
-stmt: CALLV(ar)  "jal %0\n"  1
-ar: reg    "$%0"
-ar: CNSTP4  "%a"   range(a, 0, 0x0fffffff)
-stmt: RETF4(reg)  "# ret\n"  1
-stmt: RETF8(reg)  "# ret\n"  1
-stmt: RETI4(reg)  "# ret\n"  1
-stmt: RETU4(reg)  "# ret\n"  1
-stmt: RETP4(reg)  "# ret\n"  1
+reg:  CALLF2(ar)  ".error floating point not supported\n"  1
+reg:  CALLI2(ar)  ".error function calls not yet implemented\n"  1
+reg:  CALLP2(ar)  ".error function calls not yet implemented\n"  1
+reg:  CALLU2(ar)  ".error function calls not yet implemented\n"  1
+stmt: CALLV(ar)   ".error function calls not yet implemented\n"  1
+ar: reg    "%0"
+ar: CNSTP2  "%a"   
+stmt: RETF2(reg)  ".error floating point not supported\n"  1
+stmt: RETI2(reg)  "# ret\n"  1
+stmt: RETU2(reg)  "# ret\n"  1
+stmt: RETP2(reg)  "# ret\n"  1
 stmt: RETV(reg)   "# ret\n"  1
-stmt: ARGF4(reg)  "# arg\n"  1
-stmt: ARGF8(reg)  "# arg\n"  1
-stmt: ARGI4(reg)  "# arg\n"  1
-stmt: ARGP4(reg)  "# arg\n"  1
-stmt: ARGU4(reg)  "# arg\n"  1
+stmt: ARGF2(reg)  ".error floating point not supported\n"  1
+stmt: ARGI2(reg)  ".error function call arguments not yet implemented\n"  1
+stmt: ARGP2(reg)  ".error function call arguments not yet implemented\n"  1
+stmt: ARGU2(reg)  ".error function call arguments not yet implemented\n"  1
 
-stmt: ARGB(INDIRB(reg))       "# argb %0\n"      1
-stmt: ASGNB(reg,INDIRB(reg))  "# asgnb %0 %1\n"  1
 %%
 static void progend(void){}
+
 static void progbeg(int argc, char *argv[]) {
         int i;
+		int useheaders = 1;
 
         {
                 union {
@@ -314,27 +306,28 @@ static void progbeg(int argc, char *argv[]) {
                 u.c = 1;
                 swap = ((int)(u.i == 1)) != IR->little_endian;
         }
-        print(".set reorder\n");
-        pic = !IR->little_endian;
+
         parseflags(argc, argv);
         for (i = 0; i < argc; i++)
-                if (strncmp(argv[i], "-G", 2) == 0)
-                        gnum = atoi(argv[i] + 2);
-                else if (strcmp(argv[i], "-pic=1") == 0
-                ||       strcmp(argv[i], "-pic=0") == 0)
-                        pic = argv[i][5]-'0';
+            if (strncmp(argv[i], "-n", 2) == 0) {
+				useheaders = 0;
+			}
+
+		if (useheaders) {
+			print("#include \"soc/rtc_cntl_reg.h\"\n");
+			print("#include \"soc/rtc_io_reg.h\"\n");
+			print("#include \"soc/soc_ulp.h\"\n");
+		}
         for (i = 0; i < 31; i += 2)
-                freg2[i] = mkreg("%d", i, 3, FREG);
-        for (i = 0; i < 32; i++)
-                ireg[i]  = mkreg("%d", i, 1, IREG);
-        ireg[29]->x.name = "sp";
-        d6 = mkreg("6", 6, 3, IREG);
+                freg2[i] = mkreg("Bogus Floating REG%d", i, 3, FREG);
+        for (i = 0; i < 4; i++)
+                ireg[i]  = mkreg("R%d", i, 1, IREG);
         freg2w = mkwildcard(freg2);
-        iregw = mkwildcard(ireg);
+        iregw  = mkwildcard(ireg);
         tmask[IREG] = INTTMP; tmask[FREG] = FLTTMP;
         vmask[IREG] = INTVAR; vmask[FREG] = FLTVAR;
-        blkreg = mkreg("8", 8, 7, IREG);
 }
+
 static Symbol rmap(int opk) {
         switch (optype(opk)) {
         case I: case U: case P: case B:
@@ -348,28 +341,9 @@ static Symbol rmap(int opk) {
 static void target(Node p) {
         assert(p);
         switch (specific(p->op)) {
-        case CNST+I: case CNST+U: case CNST+P:
-                if (range(p, 0, 0) == 0) {
-                        setreg(p, ireg[0]);
-                        p->x.registered = 1;
-                }
-                break;
-        case CALL+V:
-                rtarget(p, 0, ireg[25]);
-                break;
-        case CALL+F:
-                rtarget(p, 0, ireg[25]);
-                setreg(p, freg2[0]);
-                break;
-        case CALL+I: case CALL+P: case CALL+U:
-                rtarget(p, 0, ireg[25]);
-                setreg(p, ireg[2]);
-                break;
-        case RET+F:
-                rtarget(p, 0, freg2[0]);
-                break;
+ 
         case RET+I: case RET+U: case RET+P:
-                rtarget(p, 0, ireg[2]);
+                rtarget(p, 0, ireg[0]);
                 break;
         case ARG+F: case ARG+I: case ARG+P: case ARG+U: {
                 static int ty0;
@@ -384,8 +358,6 @@ static void target(Node p) {
                         rtarget(p, 0, q);
                 break;
                 }
-        case ASGN+B: rtarget(p->kids[1], 0, blkreg); break;
-        case ARG+B:  rtarget(p->kids[0], 0, blkreg); break;
         }
 }
 static void clobber(Node p) {
@@ -448,19 +420,7 @@ static void emit2(Node p) {
                 break;
         }
 }
-static Symbol argreg(int argno, int offset, int ty, int sz, int ty0) {
-        assert((offset&3) == 0);
-        if (offset > 12)
-                return NULL;
-        else if (argno == 0 && ty == F)
-                return freg2[12];
-        else if (argno == 1 && ty == F && ty0 == F)
-                return freg2[14];
-        else if (argno == 1 && ty == F && sz == 8)
-                return d6;  /* Pair! */
-        else
-                return ireg[(offset/4) + 4];
-}
+
 static void doarg(Node p) {
         static int argno;
         int align;
@@ -477,191 +437,46 @@ static void local(Symbol p) {
                 mkauto(p);
 }
 static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls) {
-        int i, saved, sizefsave, sizeisave, varargs;
-        Symbol r, argregs[4];
-
-        usedmask[0] = usedmask[1] = 0;
-        freemask[0] = freemask[1] = ~(unsigned)0;
-        offset = maxoffset = maxargoffset = 0;
-        for (i = 0; callee[i]; i++)
-                ;
-        varargs = variadic(f->type)
-                || i > 0 && strcmp(callee[i-1]->name, "va_alist") == 0;
-        for (i = 0; callee[i]; i++) {
-                Symbol p = callee[i];
-                Symbol q = caller[i];
-                assert(q);
-                offset = roundup(offset, q->type->align);
-                p->x.offset = q->x.offset = offset;
-                p->x.name = q->x.name = stringd(offset);
-                r = argreg(i, offset, optype(ttob(q->type)), q->type->size, optype(ttob(caller[0]->type)));
-                if (i < 4)
-                        argregs[i] = r;
-                offset = roundup(offset + q->type->size, 4);
-                if (varargs)
-                        p->sclass = AUTO;
-                else if (r && ncalls == 0 &&
-                         !isstruct(q->type) && !p->addressed &&
-                         !(isfloat(q->type) && r->x.regnode->set == IREG)
-) {
-                        p->sclass = q->sclass = REGISTER;
-                        askregvar(p, r);
-                        assert(p->x.regnode && p->x.regnode->vbl == p);
-                        q->x = p->x;
-                        q->type = p->type;
-                }
-                else if (askregvar(p, rmap(ttob(p->type)))
-                         && r != NULL
-                         && (isint(p->type) || p->type == q->type)) {
-                        assert(q->sclass != REGISTER);
-                        p->sclass = q->sclass = REGISTER;
-                        q->type = p->type;
-                }
-        }
-        assert(!caller[i]);
-        offset = 0;
         gencode(caller, callee);
-        if (ncalls)
-                usedmask[IREG] |= ((unsigned)1)<<31;
-        usedmask[IREG] &= 0xc0ff0000;
-        usedmask[FREG] &= 0xfff00000;
-        if (pic && ncalls)
-                usedmask[IREG] |= 1<<25;
-        maxargoffset = roundup(maxargoffset, usedmask[FREG] ? 8 : 4);
-        if (ncalls && maxargoffset < 16)
-                maxargoffset = 16;
-        sizefsave = 4*bitcount(usedmask[FREG]);
-        sizeisave = 4*bitcount(usedmask[IREG]);
-        framesize = roundup(maxargoffset + sizefsave
-                + sizeisave + maxoffset, 16);
         segment(CODE);
-        print(".align 2\n");
-        print(".ent %s\n", f->x.name);
         print("%s:\n", f->x.name);
-        i = maxargoffset + sizefsave - framesize;
-        print(".frame $sp,%d,$31\n", framesize);
-        if (pic)
-                print(".set noreorder\n.cpload $25\n.set reorder\n");
-        if (framesize > 0)
-                print("addu $sp,$sp,%d\n", -framesize);
-        if (usedmask[FREG])
-                print(".fmask 0x%x,%d\n", usedmask[FREG], i - 8);
-        if (usedmask[IREG])
-                print(".mask 0x%x,%d\n",  usedmask[IREG],
-                        i + sizeisave - 4);
-        saved = maxargoffset;
-        for (i = 20; i <= 30; i += 2)
-                if (usedmask[FREG]&(3<<i)) {
-                        print("s.d $f%d,%d($sp)\n", i, saved);
-                        saved += 8;
-                }
-
-        for (i = 16; i <= 31; i++)
-                if (usedmask[IREG]&(1<<i)) {
-                        if (i == 25)
-                                print(".cprestore %d\n", saved);
-                        else
-                                print("sw $%d,%d($sp)\n", i, saved);
-                        saved += 4;
-                }
-        for (i = 0; i < 4 && callee[i]; i++) {
-                r = argregs[i];
-                if (r && r->x.regnode != callee[i]->x.regnode) {
-                        Symbol out = callee[i];
-                        Symbol in  = caller[i];
-                        int rn = r->x.regnode->number;
-                        int rs = r->x.regnode->set;
-                        int tyin = ttob(in->type);
-
-                        assert(out && in && r && r->x.regnode);
-                        assert(out->sclass != REGISTER || out->x.regnode);
-                        if (out->sclass == REGISTER
-                        && (isint(out->type) || out->type == in->type)) {
-                                int outn = out->x.regnode->number;
-                                if (rs == FREG && tyin == F+sizeop(8))
-                                        print("mov.d $f%d,$f%d\n", outn, rn);
-                                else if (rs == FREG && tyin == F+sizeop(4))
-                                        print("mov.s $f%d,$f%d\n", outn, rn);
-                                else if (rs == IREG && tyin == F+sizeop(8))
-                                        print("mtc1.d $%d,$f%d\n", rn,   outn);
-                                else if (rs == IREG && tyin == F+sizeop(4))
-                                        print("mtc1 $%d,$f%d\n",   rn,   outn);
-                                else
-                                        print("move $%d,$%d\n",    outn, rn);
-                        } else {
-                                int off = in->x.offset + framesize;
-                                if (rs == FREG && tyin == F+sizeop(8))
-                                        print("s.d $f%d,%d($sp)\n", rn, off);
-                                else if (rs == FREG && tyin == F+sizeop(4))
-                                        print("s.s $f%d,%d($sp)\n", rn, off);
-                                else {
-                                        int i, n = (in->type->size + 3)/4;
-                                        for (i = rn; i < rn+n && i <= 7; i++)
-                                                print("sw $%d,%d($sp)\n", i, off + (i-rn)*4);
-                                }
-                        }
-                }
-        }
-        if (varargs && callee[i-1]) {
-                i = callee[i-1]->x.offset + callee[i-1]->type->size;
-                for (i = roundup(i, 4)/4; i <= 3; i++)
-                        print("sw $%d,%d($sp)\n", i + 4, framesize + 4*i);
-                }
         emitcode();
-        saved = maxargoffset;
-        for (i = 20; i <= 30; i += 2)
-                if (usedmask[FREG]&(3<<i)) {
-                        print("l.d $f%d,%d($sp)\n", i, saved);
-                        saved += 8;
-                }
-        for (i = 16; i <= 31; i++)
-                if (usedmask[IREG]&(1<<i)) {
-                        print("lw $%d,%d($sp)\n", i, saved);
-                        saved += 4;
-                }
-        if (framesize > 0)
-                print("addu $sp,$sp,%d\n", framesize);
-        print("j $31\n");
-        print(".end %s\n", f->x.name);
+        print(".error functions not yet implemented\n");
 }
+
 static void defconst(int suffix, int size, Value v) {
-        if (suffix == F && size == 4) {
-                float f = v.d;
-                print(".word 0x%x\n", *(unsigned *)&f);
-        }
-        else if (suffix == F && size == 8) {
-                double d = v.d;
-                unsigned *p = (unsigned *)&d;
-                print(".word 0x%x\n.word 0x%x\n", p[swap], p[!swap]);
+        if (suffix == F) {
+                print(".error floating point constants not supported\n");
         }
         else if (suffix == P)
-                print(".word 0x%x\n", (unsigned)v.p);
+                print(".long 0x%x\n", (unsigned)v.p);
         else if (size == 1)
-                print(".byte 0x%x\n", (unsigned)((unsigned char)(suffix == I ? v.i : v.u)));
+                print(".long 0x%x\n", (unsigned)((unsigned char)(suffix == I ? v.i : v.u)));
         else if (size == 2)
-                print(".half 0x%x\n", (unsigned)((unsigned short)(suffix == I ? v.i : v.u)));
+                print(".long 0x%x\n", (unsigned)((unsigned short)(suffix == I ? v.i : v.u)));
         else if (size == 4)
-                print(".word 0x%x\n", (unsigned)(suffix == I ? v.i : v.u));
+                print(".long 0x%x\n", (unsigned)(suffix == I ? v.i : v.u));
 }
 static void defaddress(Symbol p) {
-        if (pic && p->scope == LABELS)
-                print(".gpword %s\n", p->x.name);
-        else
-                print(".word %s\n", p->x.name);
+                print(".long %s\n", p->x.name);
 }
+
 static void defstring(int n, char *str) {
         char *s;
 
         for (s = str; s < str + n; s++)
                 print(".byte %d\n", (*s)&0377);
 }
+
 static void export(Symbol p) {
-        print(".globl %s\n", p->x.name);
+        print(".global %s\n", p->x.name);
 }
+
 static void import(Symbol p) {
         if (!isfunc(p->type))
-                print(".extern %s %d\n", p->name, p->type->size);
+                print(".error importing symbols not supported\n");
 }
+
 static void defsymbol(Symbol p) {
         if (p->scope >= LOCAL && p->sclass == STATIC)
                 p->x.name = stringf("L.%d", genlabel(1));
@@ -683,27 +498,15 @@ static void address(Symbol q, Symbol p, long n) {
         }
 }
 static void global(Symbol p) {
-        if (p->u.seg == BSS) {
-                if (p->sclass == STATIC || Aflag >= 2)
-                        print(".lcomm %s,%d\n", p->x.name, p->type->size);
-                else
-                        print( ".comm %s,%d\n", p->x.name, p->type->size);
-        } else {
-                if (p->u.seg == DATA
-                && (p->type->size == 0 || p->type->size > gnum))
-                        print(".data\n");
-                else if (p->u.seg == DATA)
-                        print(".sdata\n");
-                print(".align %c\n", ".01.2...3"[p->type->align]);
-                print("%s:\n", p->x.name);
-        }
+        print("/* global */\n%s:\n", p->x.name);
 }
-static void segment(int n) {
-        cseg = n;
-        switch (n) {
-        case CODE: print(".text\n");  break;
-        case LIT:  print(".rdata\n"); break;
-        }
+static void segment(int cseg) {
+    switch (cseg) {
+		case CODE: print(".text\n");  break;
+		case LIT:  print(".bss\n"); break;
+		case BSS:  print(".bss\n");  break;
+		case DATA: print(".bss\n"); break;
+    }
 }
 static void space(int n) {
         if (cseg != BSS)
@@ -783,78 +586,23 @@ static void stabsym(Symbol p) {
         if (p == cfunc && IR->stabline)
                 (*IR->stabline)(&p->src);
 }
-Interface mipsebIR = {
-        1, 1, 0,  /* char */
+Interface ulpIR = {
+        2, 2, 0,  /* char */
         2, 2, 0,  /* short */
-        4, 4, 0,  /* int */
-        4, 4, 0,  /* long */
-        4, 4, 0,  /* long long */
-        4, 4, 1,  /* float */
-        8, 8, 1,  /* double */
-        8, 8, 1,  /* long double */
-        4, 4, 0,  /* T * */
-        0, 1, 0,  /* struct */
-        0,      /* little_endian */
-        0,  /* mulops_calls */
-        0,  /* wants_callb */
-        1,  /* wants_argb */
-        1,  /* left_to_right */
-        0,  /* wants_dag */
-        0,  /* unsigned_char */
-        address,
-        blockbeg,
-        blockend,
-        defaddress,
-        defconst,
-        defstring,
-        defsymbol,
-        emit,
-        export,
-        function,
-        gen,
-        global,
-        import,
-        local,
-        progbeg,
-        progend,
-        segment,
-        space,
-        0, 0, 0, stabinit, stabline, stabsym, 0,
-        {
-                4,      /* max_unaligned_load */
-                rmap,
-                blkfetch, blkstore, blkloop,
-                _label,
-                _rule,
-                _nts,
-                _kids,
-                _string,
-                _templates,
-                _isinstruction,
-                _ntname,
-                emit2,
-                doarg,
-                target,
-                clobber,
-
-        }
-}, mipselIR = {
-        1, 1, 0,  /* char */
-        2, 2, 0,  /* short */
-        4, 4, 0,  /* int */
-        4, 4, 0,  /* long */
-        4, 4, 0,  /* long long */
-        4, 4, 1,  /* float */
-        8, 8, 1,  /* double */
-        8, 8, 1,  /* long double */
-        4, 4, 0,  /* T * */
-        0, 1, 0,  /* struct */
+        2, 2, 0,  /* int */
+        2, 2, 0,  /* long */
+        2, 2, 0,  /* long long */
+        2, 2, 0,  /* float */
+        2, 2, 0,  /* double */
+        2, 2, 0,  /* long double */
+        2, 2, 0,  /* pointer * */
+        0, 2, 0,  /* struct */
         1,      /* little_endian */
         0,  /* mulops_calls */
         0,  /* wants_callb */
-        1,  /* wants_argb */
+        0,  /* wants_argb */
         1,  /* left_to_right */
-        0,  /* wants_dag */
+        0/*1 for CALL?*/,  /* wants_dag */
         0,  /* unsigned_char */
         address,
         blockbeg,
