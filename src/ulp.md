@@ -209,30 +209,30 @@ reg: MULU2(reg,reg)  ".error Multiplication not supported\n"   1
 rc:  con            "%0"
 rc:  reg            "%0"
 
-reg: ADDI2(reg,rc)   "addu $%c,$%0,%1\n"  1
-reg: ADDP2(reg,rc)   "addu $%c,$%0,%1\n"  1
-reg: ADDU2(reg,rc)   "addu $%c,$%0,%1\n"  1
-reg: BANDI2(reg,rc)  "and $%c,$%0,%1\n"   1
-reg: BORI2(reg,rc)   "or $%c,$%0,%1\n"    1
-reg: BXORI2(reg,rc)  "xor $%c,$%0,%1\n"   1
-reg: BANDU2(reg,rc)  "and $%c,$%0,%1\n"   1
-reg: BORU2(reg,rc)   "or $%c,$%0,%1\n"    1
-reg: BXORU2(reg,rc)  "xor $%c,$%0,%1\n"   1
-reg: SUBI2(reg,rc)   "subu $%c,$%0,%1\n"  1
-reg: SUBP22(reg,rc)   "subu $%c,$%0,%1\n"  1
-reg: SUBU2(reg,rc)   "subu $%c,$%0,%1\n"  1
+reg: ADDI2(reg,rc)   "add %c,%0,%1\n"  1
+reg: ADDP2(reg,rc)   "add %c,%0,%1\n"  1
+reg: ADDU2(reg,rc)   "add %c,%0,%1\n"  1
+reg: BANDI2(reg,rc)  "and %c,%0,%1\n"  1
+reg: BORI2(reg,rc)   "or  %c,%0,%1\n"    1
+reg: BXORI2(reg,rc)  "xor %c,%0,%1\n"   1
+reg: BANDU2(reg,rc)  "and %c,$%0,%1\n"   1
+reg: BORU2(reg,rc)   "or %c,%0,%1\n"    1
+reg: BXORU2(reg,rc)  "xor %c,%0,%1\n"   1
+reg: SUBI2(reg,rc)   "subu %c,%0,%1\n"  1
+reg: SUBP2(reg,rc)   "subu %c,%0,%1\n"  1
+reg: SUBU2(reg,rc)   "subu %c,%0,%1\n"  1
 rc5bit: CNSTI2         "%a"                range(a,0,31)
 rc5bit: reg            "%0"
 
-reg: LSHI2(reg,rc5bit)  "lsh $%c,$%0,%1\n"  1
-reg: LSHU2(reg,rc5bit)  "lsh $%c,$%0,%1\n"  1
-reg: RSHI2(reg,rc5bit)  "rsh $%c,$%0,%1\n"  1
-reg: RSHU2(reg,rc5bit)  "rsh $%c,$%0,%1\n"  1
+reg: LSHI2(reg,rc5bit)  "lsh %c,%0,%1\n"  1
+reg: LSHU2(reg,rc5bit)  "lsh %c,%0,%1\n"  1
+reg: RSHI2(reg,rc5bit)  "rsh %c,%0,%1\n"  1
+reg: RSHU2(reg,rc5bit)  "rsh %c,%0,%1\n"  1
 reg: BCOMI2(reg)  ".error binary complement not supported\n"   1
 reg: BCOMU2(reg)  ".error binary complement not supported\n"   1
 reg: NEGI2(reg)   ".error negation no supported\n"  1
-reg: LOADI2(reg)  "move $%c,$%0\n"  move(a)
-reg: LOADU2(reg)  "move $%c,$%0\n"  move(a)
+reg: LOADI2(reg)  "move %c,%0\n"  move(a)
+reg: LOADU2(reg)  "move %c,%0\n"  move(a)
 reg: ADDF2(reg,reg)  ".error floating point addition not supported\n"  1
 reg: DIVF2(reg,reg)  ".error floating point division not supported\n"  1
 reg: MULF2(reg,reg)  ".error floating point multiplication not supported\n"  1
@@ -251,29 +251,30 @@ stmt: JUMPV(reg)   "jump %0\n"
 
 
 -----
-stmt: EQI2(reg,reg)  "beq $%0,$%1,%a\n"   1
-stmt: EQU2(reg,reg)  "beq $%0,$%1,%a\n"   1
-stmt: GEI2(reg,reg)  "bge $%0,$%1,%a\n"   1
-stmt: GEU2(reg,reg)  "bgeu $%0,$%1,%a\n"  1
-stmt: GTI2(reg,reg)  "bgt $%0,$%1,%a\n"   1
-stmt: GTU2(reg,reg)  "bgtu $%0,$%1,%a\n"  1
-stmt: LEI2(reg,reg)  "ble $%0,$%1,%a\n"   1
-stmt: LEU2(reg,reg)  "bleu $%0,$%1,%a\n"  1
-stmt: LTI2(reg,reg)  "blt $%0,$%1,%a\n"   1
-stmt: LTU2(reg,reg)  "bltu $%0,$%1,%a\n"  1
-stmt: NEI2(reg,reg)  "bne $%0,$%1,%a\n"   1
-stmt: NEU2(reg,reg)  "bne $%0,$%1,%a\n"   1
-stmt: EQF2(reg,reg)  "c.eq.s $f%0,$f%1; bc1t %a\n"  2
-stmt: EQF8(reg,reg)  "c.eq.d $f%0,$f%1; bc1t %a\n"  2
-stmt: LEF2(reg,reg)  "c.ule.s $f%0,$f%1; bc1t %a\n"  2
-stmt: LEF8(reg,reg)  "c.ule.d $f%0,$f%1; bc1t %a\n"  2
-stmt: LTF2(reg,reg)  "c.ult.s $f%0,$f%1; bc1t %a\n"  2
-stmt: LTF8(reg,reg)  "c.ult.d $f%0,$f%1; bc1t %a\n"  2
-stmt: GEF2(reg,reg)  "c.lt.s $f%0,$f%1; bc1f %a\n"  2
-stmt: GEF8(reg,reg)  "c.lt.d $f%0,$f%1; bc1f %a\n"  2
-stmt: GTF2(reg,reg)  "c.le.s $f%0,$f%1; bc1f %a\n"  2
-stmt: GTF8(reg,reg)  "c.le.d $f%0,$f%1; bc1f %a\n"  2
-stmt: NEF2(reg,reg)  "c.eq.s $f%0,$f%1; bc1f %a\n"  2
+
+stmt: EQI2(reg,reg)  "sub %0,%0,%1\njump %a, eq\n"   1
+stmt: EQU2(reg,reg)  "sub %0,%0,%1\njump %a, eq\n"   1
+stmt: GEI2(reg,reg)  "sub %0,%0,%1\njump %a, eq\njump %a, ov\n"   1
+stmt: GEU2(reg,reg)  "sub %0,%0,%1\njump %a, eq\njump %a, ov\n"  1
+stmt: GTI2(reg,reg)  "sub %0,%0,%1\njump %a, ov\n"   1
+stmt: GTU2(reg,reg)  "sub %0,%0,%1\njump %a, ov\n"  1
+stmt: LEI2(reg,reg)  "sub %0,%1,%0\njump %a, eq\njump %a, ov\n"   1
+stmt: LEU2(reg,reg)  "sub %0,%1,%0\njump %a, eq\njump %a, ov\n"  1
+stmt: LTI2(reg,reg)  "sub %0,%1,%0\njump %a, ov\n"   1
+stmt: LTU2(reg,reg)  "sub %0,%1,%0\njump %a, ov\n"  1
+stmt: NEI2(reg,reg)  "sub %0,%0,%1\njumpr 4, eq\n"   1
+stmt: NEU2(reg,reg)  "bne %0,%1,%a\n"   1
+stmt: EQF2(reg,reg)  "c.eq.s f%0,f%1; bc1t %a\n"  2
+stmt: EQF8(reg,reg)  "c.eq.d f%0,f%1; bc1t %a\n"  2
+stmt: LEF2(reg,reg)  "c.ule.s f%0,f%1; bc1t %a\n"  2
+stmt: LEF8(reg,reg)  "c.ule.d f%0,f%1; bc1t %a\n"  2
+stmt: LTF2(reg,reg)  "c.ult.s f%0,f%1; bc1t %a\n"  2
+stmt: LTF8(reg,reg)  "c.ult.d f%0,f%1; bc1t %a\n"  2
+stmt: GEF2(reg,reg)  "c.lt.s f%0,f%1; bc1f %a\n"  2
+stmt: GEF8(reg,reg)  "c.lt.d f%0,f%1; bc1f %a\n"  2
+stmt: GTF2(reg,reg)  "c.le.s f%0,f%1; bc1f %a\n"  2
+stmt: GTF8(reg,reg)  "c.le.d f%0,f%1; bc1f %a\n"  2
+stmt: NEF2(reg,reg)  "c.eq.s f%0,$f%1; bc1f %a\n"  2
 stmt: NEF8(reg,reg)  "c.eq.d $f%0,$f%1; bc1f %a\n"  2
 ar:   ADDRGP4     "%a"
 
