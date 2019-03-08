@@ -142,6 +142,8 @@ void	iniths(void);
 void	setobjname(char *);
 #define	rowlen(tokrow)	((tokrow)->lp - (tokrow)->bp)
 
+/* Workaround Microsoft compiler bug */
+#define outp __outp 
 extern	char *outp;
 extern	Token	nltoken;
 extern	Source *cursource;
