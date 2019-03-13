@@ -2,6 +2,8 @@
 
 #define INTTMP 0x0000000F
 #define INTVAR 0x00000000
+#define INTRET 0x00000001
+
 #define FLTTMP 0x000f0ff0
 #define FLTVAR 0xfff00000
 
@@ -35,10 +37,9 @@ static void target(Node);
 extern int ckstack(Node, int);
 extern int memop(Node);
 extern int sametree(Node, Node);
-static Symbol charreg[32], shortreg[32], intreg[32];
-static Symbol fltreg[32];
 
-static Symbol charregw, shortregw, intregw, fltregw;
+static Symbol ireg[32];
+static Symbol iregw;
 
 static int cseg;
 
@@ -92,6 +93,9 @@ static int cseg;
 %term CALLP2=2263
 %term CALLU2=2262
 %term CALLV=216
+
+%term LOADI2=2277
+%term LOADU2=2278
 
 %term RETF2=2289
 %term RETI2=2293
@@ -169,8 +173,8 @@ static int cseg;
 %term NEU2=2614
 
 %term JUMPV=584
-
 %term LABELV=600
+%term VREGP=711
 
 %%
 
@@ -186,31 +190,26 @@ con: CNSTU2  "%a"
 stmt: reg  ""
 
 acon: con     "%0"
-acon: ADDRGP2  "%a"
+acon: ADDRGP2 "%a"
 
 addr: ADDI2(reg,con)  "%0, %1"
 addr: ADDU2(reg,con)  "%0, %1"
 addr: ADDP2(reg,con)  "%0, %1"
 addr: acon  "%0"
-addr: reg   "($%0)"
-addr: ADDRFP4  "%a+%F($sp)"
-addr: ADDRLP4  "%a+%F($sp)"
 reg: addr  "move %c,%0\n"  1
-reg: CNSTI2  "# reg\n"  range(a, 0, 0)
-reg: CNSTU2  "# reg\n"  range(a, 0, 0)
-stmt: ASGNI2(addr,reg)  "st %1,%0\n"  1
-stmt: ASGNU2(addr,reg)  "st %1,%0\n"  1
-reg:  INDIRI2(addr)     "ld %c,%0\n"  1
-reg:  INDIRU2(addr)     "ld %c,%0\n"  1
+stmt: ASGNI2(reg,reg)  "st %1,%0,0\n"  1
+stmt: ASGNU2(reg,reg)  "st %1,%0,0\n"  1
+reg:  INDIRI2(reg)     "ld %c,%0,0\n"  1
+reg:  INDIRU2(reg)     "ld %c,%0,0\n"  1
 
-reg:  INDIRF2(addr)     ".error float not supported\n"  1
-stmt: ASGNF2(addr,reg)  ".error float not supported\n"  1
-reg: DIVI2(reg,reg)  ".error Division not supported\n"   1
-reg: DIVU2(reg,reg)  ".error Division not supported\n"  1
-reg: MODI2(reg,reg)  ".error Mod not supported\n"   1
-reg: MODU2(reg,reg)  ".error Mod not supported\n"  1
-reg: MULI2(reg,reg)  ".error Multiplication not supported\n"   1
-reg: MULU2(reg,reg)  ".error Multiplication not supported\n"   1
+reg:  INDIRF2(addr)     ".error \x22float not supported\x22\n"  1
+stmt: ASGNF2(addr,reg)  ".error \x22float not supported\x22\n"  1
+reg: DIVI2(reg,reg)  ".error \x22Division not supported.  Try right shift >>\x22\n"   1
+reg: DIVU2(reg,reg)  ".error \x22Division not supported.  Try right shift >>\x22\n"  1
+reg: MODI2(reg,reg)  ".error \x22Mod not supported\x22\n"   1
+reg: MODU2(reg,reg)  ".error \x22Mod not supported\x22\n"  1
+reg: MULI2(reg,reg)  ".error \x22Multiplication not supported. Try left shift <<\x22\n"   1
+reg: MULU2(reg,reg)  ".error \x22Multiplication not supported. Try left shift <<\x22\n"   1
 rc:  con            "%0"
 rc:  reg            "%0"
 
@@ -219,76 +218,75 @@ reg: ADDP2(reg,rc)   "add %c,%0,%1\n"  1
 reg: ADDU2(reg,rc)   "add %c,%0,%1\n"  1
 reg: BANDI2(reg,rc)  "and %c,%0,%1\n"  1
 reg: BORI2(reg,rc)   "or  %c,%0,%1\n"    1
-reg: BXORI2(reg,rc)  "xor %c,%0,%1\n"   1
+reg: BXORI2(reg,rc)  ".error \x22xor not supported\x22\n"   1
 reg: BANDU2(reg,rc)  "and %c,%0,%1\n"   1
 reg: BORU2(reg,rc)   "or %c,%0,%1\n"    1
-reg: BXORU2(reg,rc)  "xor %c,%0,%1\n"   1
-reg: SUBI2(reg,rc)   "subu %c,%0,%1\n"  1
-reg: SUBP2(reg,rc)   "subu %c,%0,%1\n"  1
-reg: SUBU2(reg,rc)   "subu %c,%0,%1\n"  1
-rc5bit: CNSTI2         "%a"                range(a,0,31)
-rc5bit: reg            "%0"
+reg: BXORU2(reg,rc)  ".error \x22xor not supported\x22\n"   1
+reg: SUBI2(reg,rc)   "sub %c,%0,%1\n"  1
+reg: SUBP2(reg,rc)   "sub %c,%0,%1\n"  1
+reg: SUBU2(reg,rc)   "sub %c,%0,%1\n"  1
+rc16bit: CNSTI2         "%a"  range(a,0,0xFFFF)
+rc16bit: reg            "%0"
 
-reg: LSHI2(reg,rc5bit)  "lsh %c,%0,%1\n"  1
-reg: LSHU2(reg,rc5bit)  "lsh %c,%0,%1\n"  1
-reg: RSHI2(reg,rc5bit)  "rsh %c,%0,%1\n"  1
-reg: RSHU2(reg,rc5bit)  "rsh %c,%0,%1\n"  1
+reg: LSHI2(reg,rc16bit)  "lsh %c,%0,%1\n"  1
+reg: LSHU2(reg,rc16bit)  "lsh %c,%0,%1\n"  1
+reg: RSHI2(reg,rc16bit)  "rsh %c,%0,%1\n"  1
+reg: RSHU2(reg,rc16bit)  "rsh %c,%0,%1\n"  1
 reg: BCOMI2(reg)  "move %c, 0\nsub %c,%c,%0\nsub %c, %c, 1\n"   1
 reg: BCOMU2(reg)  "move %c, 0\nsub %c,%c,%0\nsub %c, %c, 1\n"   1
 reg: NEGI2(reg)   "move %c, 0\nsub %c,%c,%0\n"  1
 reg: LOADI2(reg)  "move %c,%0\n"  move(a)
 reg: LOADU2(reg)  "move %c,%0\n"  move(a)
-reg: ADDF2(reg,reg)  ".error floating point addition not supported\n"  1
-reg: DIVF2(reg,reg)  ".error floating point division not supported\n"  1
-reg: MULF2(reg,reg)  ".error floating point multiplication not supported\n"  1
-reg: SUBF2(reg,reg)  ".error floating point subtraction not supported\n"  1
-reg: LOADF2(reg)     ".error floating point not supported\n"       move(a)
-reg: NEGF2(reg)      ".error floating point negation not supported\n"       1
+reg: ADDF2(reg,reg)  ".error \x22floating point addition not supported\x22\n"  1
+reg: DIVF2(reg,reg)  ".error \x22floating point division not supported\x22\n"  1
+reg: MULF2(reg,reg)  ".error \x22floating point multiplication not supported\x22\n"  1
+reg: SUBF2(reg,reg)  ".error \x22floating point subtraction not supported\x22\n"  1
+reg: NEGF2(reg)      ".error \x22floating point negation not supported\x22\n"       1
 reg: CVII2(reg)  "move %c, %0\n"  2
 reg: CVUI2(reg)  "move %c, %0\n"  1
 reg: CVUU2(reg)  "move %c, %0\n"  1
-reg: CVFF2(reg)  ".error floating point not supported\n"  1
-reg: CVIF2(reg)  ".error floating point not supported\n"  2
-reg: CVFI2(reg)  ".error floating point not supported\n" 
+reg: CVFF2(reg)  ".error \x22floating point not supported\x22\n"  1
+reg: CVIF2(reg)  ".error \x22floating point not supported\x22\n"  2
+reg: CVFI2(reg)  ".error \x22floating point not supported\x22\n" 
 stmt: LABELV  "%a:\n"
 stmt: JUMPV(acon)  "jump %0\n"   1
 stmt: JUMPV(reg)   "jump %0\n" 
 stmt: EQI2(reg,reg)  "sub %0,%0,%1\njump %a, eq\n"   1
 stmt: EQU2(reg,reg)  "sub %0,%0,%1\njump %a, eq\n"   1
-stmt: GEI2(reg,reg)  "sub %0,%0,%1\njump %a, eq\njump %a, ov\n"   1
-stmt: GEU2(reg,reg)  "sub %0,%0,%1\njump %a, eq\njump %a, ov\n"  1
-stmt: GTI2(reg,reg)  "sub %0,%0,%1\njump %a, ov\n"   1
-stmt: GTU2(reg,reg)  "sub %0,%0,%1\njump %a, ov\n"  1
-stmt: LEI2(reg,reg)  "sub %0,%1,%0\njump %a, eq\njump %a, ov\n"   1
-stmt: LEU2(reg,reg)  "sub %0,%1,%0\njump %a, eq\njump %a, ov\n"  1
-stmt: LTI2(reg,reg)  "sub %0,%1,%0\njump %a, ov\n"   1
-stmt: LTU2(reg,reg)  "sub %0,%1,%0\njump %a, ov\n"  1
+stmt: GEI2(reg,reg)  "sub %0,%1,%0\njump %a, eq\njump %a, ov\n"   1
+stmt: GEU2(reg,reg)  "sub %0,%1,%0\njump %a, eq\njump %a, ov\n"  1
+stmt: GTI2(reg,reg)  "sub %0,%1,%0\njump %a, ov\n"   1
+stmt: GTU2(reg,reg)  "sub %0,%1,%0\njump %a, ov\n"  1
+stmt: LEI2(reg,reg)  "sub %0,%0,%1\njump %a, eq\njump %a, ov\n"   1
+stmt: LEU2(reg,reg)  "sub %0,%0,%1\njump %a, eq\njump %a, ov\n"  1
+stmt: LTI2(reg,reg)  "sub %0,%0,%1\njump %a, ov\n"   1
+stmt: LTU2(reg,reg)  "sub %0,%0,%1\njump %a, ov\n"  1
 stmt: NEI2(reg,reg)  "sub %0,%0,%1\njump %L, eq\njump %a\n%L:\n"   1
 stmt: NEU2(reg,reg)  "sub %0,%0,%1\njump %L, eq\njump %a\n%L:\n"   1
-stmt: EQF2(reg,reg)  ".error floating point not supported\n"  2
-stmt: LEF2(reg,reg)  ".error floating point not supported\n"  2
-stmt: LTF2(reg,reg)  ".error floating point not supported\n"  2
-stmt: GEF2(reg,reg)  ".error floating point not supported\n"  2
-stmt: GTF2(reg,reg)  ".error floating point not supported\n"  2
-stmt: NEF2(reg,reg)  ".error floating point not supported\n"  2
+stmt: EQF2(reg,reg)  ".error \x22floating point not supported\x22\n"  2
+stmt: LEF2(reg,reg)  ".error \x22floating point not supported\x22\n"  2
+stmt: LTF2(reg,reg)  ".error \x22floating point not supported\x22\n"  2
+stmt: GEF2(reg,reg)  ".error \x22floating point not supported\x22\n"  2
+stmt: GTF2(reg,reg)  ".error \x22floating point not supported\x22\n"  2
+stmt: NEF2(reg,reg)  ".error \x22floating point not supported\x22\n"  2
 ar:   ADDRGP2     "%a"
 
-reg:  CALLF2(ar)  ".error floating point not supported\n"  1
-reg:  CALLI2(ar)  ".error function calls not yet implemented\n"  1
-reg:  CALLP2(ar)  ".error function calls not yet implemented\n"  1
-reg:  CALLU2(ar)  ".error function calls not yet implemented\n"  1
-stmt: CALLV(ar)   ".error function calls not yet implemented\n"  1
+reg:  CALLF2(ar)  ".error \x22floating point not supported\x22\n"  1
+reg:  CALLI2(ar)  ".error \x22function calls not yet implemented\x22\n"  1
+reg:  CALLP2(ar)  ".error \x22function calls not yet implemented\x22\n"  1
+reg:  CALLU2(ar)  ".error \x22function calls not yet implemented\x22\n"  1
+stmt: CALLV(ar)   ".error \x22function calls not yet implemented\x22\n"  1
 ar: reg    "%0"
 ar: CNSTP2  "%a"   
-stmt: RETF2(reg)  ".error floating point not supported\n"  1
+stmt: RETF2(reg)  ".error \x22floating point not supported\x22\n"  1
 stmt: RETI2(reg)  "# ret\n"  1
 stmt: RETU2(reg)  "# ret\n"  1
 stmt: RETP2(reg)  "# ret\n"  1
 stmt: RETV(reg)   "# ret\n"  1
-stmt: ARGF2(reg)  ".error floating point not supported\n"  1
-stmt: ARGI2(reg)  ".error function call arguments not yet implemented\n"  1
-stmt: ARGP2(reg)  ".error function call arguments not yet implemented\n"  1
-stmt: ARGU2(reg)  ".error function call arguments not yet implemented\n"  1
+stmt: ARGF2(reg)  ".error \x22floating point not supported\x22\n"  1
+stmt: ARGI2(reg)  ".error \x22function call arguments not yet implemented\x22\n"  1
+stmt: ARGP2(reg)  ".error \x22function call arguments not yet implemented\x22\n"  1
+stmt: ARGU2(reg)  ".error \x22function call arguments not yet implemented\x22\n"  1
 
 %%
 static void progend(void){}
@@ -318,14 +316,13 @@ static void progbeg(int argc, char *argv[]) {
 			print("#include \"soc/rtc_io_reg.h\"\n");
 			print("#include \"soc/soc_ulp.h\"\n");
 		}
-        for (i = 0; i < 31; i += 2)
-                freg2[i] = mkreg("Bogus Floating REG%d", i, 3, FREG);
         for (i = 0; i < 4; i++)
-                ireg[i]  = mkreg("R%d", i, 1, IREG);
-        freg2w = mkwildcard(freg2);
+                ireg[i]  = mkreg("R%d", i, /*mask*/1, /*set*/IREG);
         iregw  = mkwildcard(ireg);
-        tmask[IREG] = INTTMP; tmask[FREG] = FLTTMP;
-        vmask[IREG] = INTVAR; vmask[FREG] = FLTVAR;
+        tmask[IREG] = INTTMP; 
+        vmask[IREG] = INTVAR; 
+		tmask[FREG] = FLTTMP;
+		vmask[FREG] = FLTVAR;
 }
 
 static Symbol rmap(int opk) {
@@ -333,7 +330,7 @@ static Symbol rmap(int opk) {
         case I: case U: case P: case B:
                 return iregw;
         case F:
-                return freg2w;
+                return 0;
         default:
                 return 0;
         }
@@ -345,108 +342,47 @@ static void target(Node p) {
         case RET+I: case RET+U: case RET+P:
                 rtarget(p, 0, ireg[0]);
                 break;
-        case ARG+F: case ARG+I: case ARG+P: case ARG+U: {
-                static int ty0;
-                int ty = optype(p->op);
-                Symbol q;
-
-                q = argreg(p->x.argno, p->syms[2]->u.c.v.i, ty, opsize(p->op), ty0);
-                if (p->x.argno == 0)
-                        ty0 = ty;
-                if (q &&
-                !(ty == F && q->x.regnode->set == IREG))
-                        rtarget(p, 0, q);
-                break;
-                }
         }
 }
 static void clobber(Node p) {
         assert(p);
         switch (specific(p->op)) {
-        case CALL+F:
-                spill(INTTMP | INTRET, IREG, p);
-                spill(FLTTMP,          FREG, p);
-                break;
+
         case CALL+I: case CALL+P: case CALL+U:
                 spill(INTTMP,          IREG, p);
-                spill(FLTTMP | FLTRET, FREG, p);
                 break;
         case CALL+V:
                 spill(INTTMP | INTRET, IREG, p);
-                spill(FLTTMP | FLTRET, FREG, p);
                 break;
         }
 }
 static void emit2(Node p) {
-        int dst, n, src, sz, ty;
-        static int ty0;
-        Symbol q;
-
-        switch (specific(p->op)) {
-        case ARG+F: case ARG+I: case ARG+P: case ARG+U:
-                ty = optype(p->op);
-                sz = opsize(p->op);
-                if (p->x.argno == 0)
-                        ty0 = ty;
-                q = argreg(p->x.argno, p->syms[2]->u.c.v.i, ty, sz, ty0);
-                src = getregnum(p->x.kids[0]);
-                if (q == NULL && ty == F && sz == 4)
-                        print("s.s $f%d,%d($sp)\n", src, p->syms[2]->u.c.v.i);
-                else if (q == NULL && ty == F)
-                        print("s.d $f%d,%d($sp)\n", src, p->syms[2]->u.c.v.i);
-                else if (q == NULL)
-                        print("sw $%d,%d($sp)\n", src, p->syms[2]->u.c.v.i);
-                else if (ty == F && sz == 4 && q->x.regnode->set == IREG)
-                        print("mfc1 $%d,$f%d\n", q->x.regnode->number, src);
-                else if (ty == F && q->x.regnode->set == IREG)
-                        print("mfc1.d $%d,$f%d\n", q->x.regnode->number, src);
-                break;
-        case ASGN+B:
-                dalign = salign = p->syms[1]->u.c.v.i;
-                blkcopy(getregnum(p->x.kids[0]), 0,
-                        getregnum(p->x.kids[1]), 0,
-                        p->syms[0]->u.c.v.i, tmpregs);
-                break;
-        case ARG+B:
-                dalign = 4;
-                salign = p->syms[1]->u.c.v.i;
-                blkcopy(29, p->syms[2]->u.c.v.i,
-                        getregnum(p->x.kids[0]), 0,
-                        p->syms[0]->u.c.v.i, tmpregs);
-                n   = p->syms[2]->u.c.v.i + p->syms[0]->u.c.v.i;
-                dst = p->syms[2]->u.c.v.i;
-                for ( ; dst <= 12 && dst < n; dst += 4)
-                        print("lw $%d,%d($sp)\n", (dst/4)+4, dst);
-                break;
-        }
+       
 }
 
 static void doarg(Node p) {
-        static int argno;
-        int align;
-
-        if (argoffset == 0)
-                argno = 0;
-        p->x.argno = argno++;
-        align = p->syms[1]->u.c.v.i < 4 ? 4 : p->syms[1]->u.c.v.i;
-        p->syms[2] = intconst(mkactual(align,
-                p->syms[0]->u.c.v.i));
+       
 }
+
 static void local(Symbol p) {
         if (askregvar(p, rmap(ttob(p->type))) == 0)
                 mkauto(p);
 }
+
 static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls) {
+        usedmask[IREG] = 0;
+        freemask[IREG] = ~(unsigned)0;
+
         gencode(caller, callee);
         segment(CODE);
         print("%s:\n", f->x.name);
         emitcode();
-        print(".error functions not yet implemented\n");
+		print("\n");
 }
 
 static void defconst(int suffix, int size, Value v) {
         if (suffix == F) {
-                print(".error floating point constants not supported\n");
+                print(".error \"floating point constants not supported\n");
         }
         else if (suffix == P)
                 print(".long 0x%x\n", (unsigned)v.p);
@@ -457,6 +393,7 @@ static void defconst(int suffix, int size, Value v) {
         else if (size == 4)
                 print(".long 0x%x\n", (unsigned)(suffix == I ? v.i : v.u));
 }
+
 static void defaddress(Symbol p) {
                 print(".long %s\n", p->x.name);
 }
@@ -474,7 +411,7 @@ static void export(Symbol p) {
 
 static void import(Symbol p) {
         if (!isfunc(p->type))
-                print(".error importing symbols not supported\n");
+                print(".error \"importing symbols not supported\n");
 }
 
 static void defsymbol(Symbol p) {
@@ -486,6 +423,7 @@ static void defsymbol(Symbol p) {
                 assert(p->scope != CONSTANTS || isint(p->type) || isptr(p->type)),
                 p->x.name = p->name;
 }
+
 static void address(Symbol q, Symbol p, long n) {
         if (p->scope == GLOBAL
         || p->sclass == STATIC || p->sclass == EXTERN)
@@ -497,20 +435,25 @@ static void address(Symbol q, Symbol p, long n) {
                 q->x.name = stringd(q->x.offset);
         }
 }
+
 static void global(Symbol p) {
         print("/* global */\n%s:\n", p->x.name);
 }
 static void segment(int cseg) {
     switch (cseg) {
-		case CODE: print(".text\n");  break;
-		case LIT:  print(".bss\n"); break;
+		case CODE: print(".text\n"); break;
+		case LIT:  print(".text\n"); break;
 		case BSS:  print(".bss\n");  break;
-		case DATA: print(".bss\n"); break;
+		case DATA: print(".data\n"); break;
     }
 }
 static void space(int n) {
-        if (cseg != BSS)
+        if (cseg != BSS) {
+				int extra = n % 4;
+				if (extra)
+					n += (4 - extra);
                 print(".space %d\n", n);
+		}
 }
 static void blkloop(int dreg, int doff, int sreg, int soff, int size, int tmps[]) {
         int lab = genlabel(1);
