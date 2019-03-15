@@ -175,9 +175,11 @@ static int cseg;
 
 reg:  INDIRI2(VREGP)     "# read register\n"
 reg:  INDIRU2(VREGP)     "# read register\n"
+reg:  INDIRP2(VREGP)     "# read register\n"
 
 stmt: ASGNI2(VREGP,reg)  "# write register\n"
 stmt: ASGNU2(VREGP,reg)  "# write register\n"
+stmt: ASGNP2(VREGP,reg)  "# write register\n"
 
 con: CNSTI2  "%a"
 con: CNSTU2  "%a"
@@ -186,16 +188,16 @@ stmt: reg  ""
 
 acon: con     "%0"
 acon: ADDRGP2 "%a"
-
-addr: ADDI2(reg,con)  "%0, %1"
-addr: ADDU2(reg,con)  "%0, %1"
-addr: ADDP2(reg,con)  "%0, %1"
+acon: ADDRLP2 "%a"
 addr: acon  "%0"
-reg: addr  "move %c,%0\n"  1
+reg:  addr  "move %c,%0\n"  1
 stmt: ASGNI2(reg,reg)  "st %1,%0,0\n"  1
 stmt: ASGNU2(reg,reg)  "st %1,%0,0\n"  1
+stmt: ASGNP2(reg,reg)  "st %1,%0,0\n"  1
 reg:  INDIRI2(reg)     "ld %c,%0,0\n"  1
 reg:  INDIRU2(reg)     "ld %c,%0,0\n"  1
+reg:  INDIRP2(reg)     "ld %c,%0,0\n"  1
+
 
 reg:  INDIRF2(addr)     ".error \u0022float not supported\u0022\n"  1
 stmt: ASGNF2(addr,reg)  ".error \u0022float not supported\u0022\n"  1
@@ -265,12 +267,13 @@ stmt: GEF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
 stmt: GTF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
 stmt: NEF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
 ar:   ADDRGP2     "%a"
+ar:   ADDRLP2     "%a"
 
 reg:  CALLF2(ar)  ".error \u0022floating point not supported\u0022\n"  1
-reg:  CALLI2(ar)  ".error \u0022function calls not yet implemented\u0022\n"  1
-reg:  CALLP2(ar)  ".error \u0022function calls not yet implemented\u0022\n"  1
-reg:  CALLU2(ar)  ".error \u0022function calls not yet implemented\u0022\n"  1
-stmt: CALLV(ar)   ".error \u0022function calls not yet implemented\u0022\n"  1
+reg:  CALLI2(ar)  "# emit2\n"  1
+reg:  CALLP2(ar)  "# emit2\n"  1
+reg:  CALLU2(ar)  "# emit2\n"  1
+stmt: CALLV(ar)   "# emit2\n"  1
 ar: reg    "%0"
 ar: CNSTP2  "%a"   
 stmt: RETF2(reg)  ".error \u0022floating point not supported\u0022\n"  1
@@ -278,13 +281,18 @@ stmt: RETI2(reg)  "# ret\n"  1
 stmt: RETU2(reg)  "# ret\n"  1
 stmt: RETP2(reg)  "# ret\n"  1
 stmt: RETV(reg)   "# ret\n"  1
-stmt: ARGF2(reg)  ".error \u0022floating point not supported\u0022\n"  1
-stmt: ARGI2(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  1
-stmt: ARGP2(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  1
-stmt: ARGU2(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  1
+stmt: ARGF2(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+stmt: ARGI2(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  LBURG_MAX
+stmt: ARGP2(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  LBURG_MAX
+stmt: ARGU2(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  LBURG_MAX
+ 
+stmt: ARGI2(con)  "# emit2\n"  
+stmt: ARGP2(con)  "# emit2\n"  
+stmt: ARGU2(con)  "# emit2\n"  
 
 %%
 static void progend(void){
+	segment(CODE);
 	print("halt\n");
 }
 
@@ -326,6 +334,7 @@ static void target(Node p) {
         assert(p);
         switch (specific(p->op)) {
 		case CALL+I: case CALL+P: case CALL+U:
+				/* Even intrinsic functions return their value in R0 */
                 setreg(p, ireg[0]);
                 break;
  
@@ -339,19 +348,64 @@ static void clobber(Node p) {
         switch (specific(p->op)) {
 
         case CALL+I: case CALL+P: case CALL+U:
-                spill(INTTMP,          IREG, p);
+                //spill(INTTMP,          IREG, p);
                 break;
         case CALL+V:
-                spill(INTTMP | INTRET, IREG, p);
+                //spill(INTTMP | INTRET, IREG, p);
                 break;
         }
 }
 static void emit2(Node p) {
-       
+	int i, j;
+	char * fnname;
+	static int argindex;
+
+	struct { const char * name; int addR0; int argcount; } 
+	 instr[] = { 
+		{ "adc",   1, 2 },
+		{ "halt",  0, 0 },
+		{ "i2c_rd",0, 4 },
+		{ "i2c_wr",0, 5 },
+		{ "reg_rd",0, 3 },
+		{ "reg_wr",0, 4 },
+		{ "sleep", 0, 1 },
+		{ "tsens", 1, 1 },
+		{ "wait",  0, 1 },
+		{ "wake",  0, 0 }
+	};
+
+	switch (specific(p->op)) {
+		case CALL+I: case CALL+P: case CALL+U: case CALL+V:
+			fnname = p->kids[0]->syms[0]->x.name;
+			for (i=0; i < NELEMS(instr); i++) {
+				if (0 == strcmp(instr[i].name, fnname)) {
+					print("%s ", instr[i].name);
+					if (instr[i].addR0)
+						print("R0 ");
+					for (j=0; j < instr[i].argcount; j++) {
+						print("arg.%d%s", j, j < instr[i].argcount -1 ? ", " : "");
+					}
+					print("\n");
+				}
+			}
+			argindex = 0;
+			break;
+
+		case ARG+I: case ARG+P: case ARG+U: 
+		{
+			int rulenum;
+			print (".set arg.%d, ", argindex++);
+			/* Emulate what emitasm() does for "%0" */
+			rulenum = _rule(p->x.state, /*nt*/ p->x.inst);
+			emitasm(p->kids[0], _nts[rulenum][0]);
+			print("\n");
+			break;
+		}
+	}
 }
 
 static void doarg(Node p) {
-       
+
 }
 
 static void local(Symbol p) {
@@ -446,41 +500,14 @@ static void space(int n) {
 
 }
 static void blkloop(int dreg, int doff, int sreg, int soff, int size, int tmps[]) {
-        int lab = genlabel(1);
-
-        print("addu $%d,$%d,%d\n", sreg, sreg, size&~7);
-        print("addu $%d,$%d,%d\n", tmps[2], dreg, size&~7);
-        blkcopy(tmps[2], doff, sreg, soff, size&7, tmps);
-        print("L.%d:\n", lab);
-        print("addu $%d,$%d,%d\n", sreg, sreg, -8);
-        print("addu $%d,$%d,%d\n", tmps[2], tmps[2], -8);
-        blkcopy(tmps[2], doff, sreg, soff, 8, tmps);
-        print("bltu $%d,$%d,L.%d\n", dreg, tmps[2], lab);
+	print (".error \u0022blkloop not implemnted yet\u0022\n");
 }
 static void blkfetch(int size, int off, int reg, int tmp) {
-        assert(size == 1 || size == 2 || size == 4);
-        if (size == 1)
-                print("lbu $%d,%d($%d)\n",  tmp, off, reg);
-        else if (salign >= size && size == 2)
-                print("lhu $%d,%d($%d)\n",  tmp, off, reg);
-        else if (salign >= size)
-                print("lw $%d,%d($%d)\n",   tmp, off, reg);
-        else if (size == 2)
-                print("ulhu $%d,%d($%d)\n", tmp, off, reg);
-        else
-                print("ulw $%d,%d($%d)\n",  tmp, off, reg);
+	print (".error \u0022blkfetch not implemnted yet\u0022\n");
 }
 static void blkstore(int size, int off, int reg, int tmp) {
-        if (size == 1)
-                print("sb $%d,%d($%d)\n",  tmp, off, reg);
-        else if (dalign >= size && size == 2)
-                print("sh $%d,%d($%d)\n",  tmp, off, reg);
-        else if (dalign >= size)
-                print("sw $%d,%d($%d)\n",  tmp, off, reg);
-        else if (size == 2)
-                print("ush $%d,%d($%d)\n", tmp, off, reg);
-        else
-                print("usw $%d,%d($%d)\n", tmp, off, reg);
+	print (".error \u0022blkstore not implemnted yet\u0022\n");
+
 }
 static void stabinit(char *, int, char *[]);
 static void stabline(Coordinate *);
