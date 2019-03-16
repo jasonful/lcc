@@ -39,6 +39,7 @@ static Symbol ireg[32];
 static Symbol iregw;
 
 static int cseg;
+static char* currentfunction;
 
 %}
 %start stmt
@@ -362,10 +363,85 @@ static void clobber(Node p) {
         }
 }
 
+/* Taken from gen.c */
+static Node reuse(Node p, int nt) {
+	struct _state {
+		short cost[1];
+	};
+	Symbol r = p->syms[RX];
+
+	if (generic(p->op) == INDIR && p->kids[0]->op == VREG+P
+	&& r->u.t.cse && p->x.mayrecalc
+	&& ((struct _state*)r->u.t.cse->x.state)->cost[nt] == 0)
+		return r->u.t.cse;
+	else
+		return p;
+}
+
+/* Taken from gen.c */
+static int getrule(Node p, int nt) {
+	int rulenum;
+
+	assert(p);
+	rulenum = (*_rule)(p->x.state, nt);
+	if (!rulenum) {
+		fprint(stderr, "(%x->op=%s at %w is corrupt.)\n", p, opname(p->op), &src);
+		assert(0);
+	}
+	return rulenum;
+}
+
+char* emitasmtostring(Node p, int nt) {
+	int rulenum;
+	short *nts;
+	char *fmt;
+	Node kids[10];
+	char rgch[100];
+	char *pch = rgch;
+
+	p = reuse(p, nt);
+	rulenum = getrule(p, nt);
+	nts = _nts[rulenum];
+	fmt = _templates[rulenum];
+	assert(fmt);
+	if (_isinstruction[rulenum] && p->x.emitted)
+		return p->syms[RX]->x.name;
+	else if (*fmt == '#') {
+		assert(0);
+	}
+	else {
+		if (*fmt == '?') {
+			fmt++;
+			assert(p->kids[0]);
+			if (p->syms[RX] == p->x.kids[0]->syms[RX])
+				while (*fmt++ != '\n')
+					;
+		}
+		for ((*_kids)(p, rulenum, kids); *fmt; fmt++)
+			if (*fmt != '%')
+				*pch++ = *fmt;
+			else if (*++fmt == 'F')
+				pch += sprintf(pch, "%d", framesize);
+			else if (*fmt >= '0' && *fmt <= '9') {
+				strcpy (pch, emitasmtostring(kids[*fmt - '0'], nts[*fmt - '0']));
+				while (*pch++ != 0)
+					;
+			}
+			else if (*fmt >= 'a' && *fmt < 'a' + NELEMS(p->syms))
+				return p->syms[*fmt - 'a']->x.name;
+			else
+				*pch++ = *fmt;
+		*pch = 0;
+	}
+	return string(rgch);
+}
+
+
 static void emit2(Node p) {
 	int i, j;
 	char * fnname;
 	static int argindex;
+	static char* argstring[6];
 
 	struct { const char * name; int addR0; int argcount; } 
 	 instr[] = { 
@@ -390,7 +466,9 @@ static void emit2(Node p) {
 					if (instr[i].addR0)
 						print("R0 ");
 					for (j=0; j < instr[i].argcount; j++) {
-						print("arg.%d%s", j, j < instr[i].argcount -1 ? ", " : "");
+						print(argstring[j]);
+						if (j < instr[i].argcount -1)
+							print(",");
 					}
 					print("\n");
 				}
@@ -401,11 +479,11 @@ static void emit2(Node p) {
 		case ARG+I: case ARG+P: case ARG+U: 
 		{
 			int rulenum;
-			print (".set arg.%d, ", argindex++);
+			
 			/* Emulate what emitasm() does for "%0" */
 			rulenum = _rule(p->x.state, /*nt*/ p->x.inst);
-			emitasm(p->kids[0], _nts[rulenum][0]);
-			print("\n");
+			argstring[argindex++] = emitasmtostring(p->kids[0], _nts[rulenum][0]);
+
 			break;
 		}
 	}
@@ -424,7 +502,7 @@ static void local(Symbol p) {
 		if (oldseg != BSS)
 			segment(BSS);
 
-		p->x.name = stringf("LCL.%s", p->name);
+		p->x.name = stringf("%s.%s", currentfunction, p->name);
 		global(p);
 		space(p->type->size);
 
@@ -438,6 +516,7 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls) {
         usedmask[IREG] = 0;
         freemask[IREG] = ~(unsigned)0;
 
+		currentfunction = string(f->x.name);
         gencode(caller, callee);
         segment(CODE);
         print("%s:\n", f->x.name);
