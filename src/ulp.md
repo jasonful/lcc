@@ -183,6 +183,8 @@ stmt: ASGNP2(VREGP,reg)  "# write register\n"
 
 con: CNSTI2  "%a"
 con: CNSTU2  "%a"
+zero: CNSTI2 "# compare to zero" range(a,0,0)
+zero: CNSTU2 "# compare to zero" range(a,0,0)
 
 stmt: reg  ""
 
@@ -250,6 +252,8 @@ stmt: JUMPV(acon)  "jump %0\n"   1
 stmt: JUMPV(reg)   "jump %0\n" 
 stmt: EQI2(reg,reg)  "sub %0,%0,%1\njump %a, eq\n"   1
 stmt: EQU2(reg,reg)  "sub %0,%0,%1\njump %a, eq\n"   1
+stmt: EQI2(reg,zero) "move %0,%0 #if %0 == 0 \njump %a, eq\n"   1
+stmt: EQU2(reg,zero) "move %0,%0 #if %0 == 0 \njump %a, eq\n"   1
 stmt: GEI2(reg,reg)  "sub %0,%1,%0\njump %a, eq\njump %a, ov\n"   1
 stmt: GEU2(reg,reg)  "sub %0,%1,%0\njump %a, eq\njump %a, ov\n"  1
 stmt: GTI2(reg,reg)  "sub %0,%1,%0\njump %a, ov\n"   1
@@ -260,6 +264,8 @@ stmt: LTI2(reg,reg)  "sub %0,%0,%1\njump %a, ov\n"   1
 stmt: LTU2(reg,reg)  "sub %0,%0,%1\njump %a, ov\n"  1
 stmt: NEI2(reg,reg)  "sub %0,%0,%1\njump 1f, eq\njump %a\n1:\n"   1
 stmt: NEU2(reg,reg)  "sub %0,%0,%1\njump 1f, eq\njump %a\n1:\n"   1
+stmt: NEI2(reg,zero) "move %0,%0 #if %0 == 0 \njump 1f, eq\njump %a\n1:\n"   1
+stmt: NEU2(reg,zero) "move %0,%0 #if %0 == 0 \njump 1f, eq\njump %a\n1:\n"   1
 stmt: EQF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
 stmt: LEF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
 stmt: LTF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
