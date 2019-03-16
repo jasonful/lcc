@@ -1,8 +1,8 @@
 %{
 
-#define INTTMP 0x0000000F
-#define INTVAR 0x00000000
-#define INTRET 0x00000001
+#define TMASKIREG 0x0000000F
+#define VMASKIREG 0x0000000F
+#define RMASKIREG 0x00000001
 
 #include "c.h"
 #define NODEPTR_TYPE Node
@@ -314,8 +314,8 @@ static void progbeg(int argc, char *argv[]) {
         for (i = 0; i < 4; i++)
                 ireg[i]  = mkreg("R%d", i, /*mask*/1, /*set*/IREG);
         iregw  = mkwildcard(ireg);
-        tmask[IREG] = INTTMP; 
-        vmask[IREG] = INTVAR; 
+        tmask[IREG] = TMASKIREG; 
+        vmask[IREG] = VMASKIREG; 
 		tmask[FREG] = 0;
 		vmask[FREG] = 0;
 }
@@ -348,13 +348,14 @@ static void clobber(Node p) {
         switch (specific(p->op)) {
 
         case CALL+I: case CALL+P: case CALL+U:
-                //spill(INTTMP,          IREG, p);
+                //spill(TMASKIREG,          IREG, p);
                 break;
         case CALL+V:
-                //spill(INTTMP | INTRET, IREG, p);
+                //spill(TMASKIREG | RMASKIREG, IREG, p);
                 break;
         }
 }
+
 static void emit2(Node p) {
 	int i, j;
 	char * fnname;
@@ -409,8 +410,22 @@ static void doarg(Node p) {
 }
 
 static void local(Symbol p) {
-        if (askregvar(p, rmap(ttob(p->type))) == 0)
-                mkauto(p);
+	if (askregvar(p, rmap(ttob(p->type))) == 0) {
+		/* Declare a new local (although our implementation is quite global */
+		int oldseg = cseg;		
+		assert(p->sclass == AUTO);
+
+		if (oldseg != BSS)
+			segment(BSS);
+
+		p->x.name = stringf("LCL.%s", p->name);
+		global(p);
+		space(p->type->size);
+
+		if (oldseg != BSS)
+			segment(oldseg);	
+	}
+            
 }
 
 static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls) {
@@ -450,7 +465,7 @@ static void defstring(int n, char *str) {
 }
 
 static void export(Symbol p) {
-        print(".global %s\n", p->x.name);
+        print("    .global %s\n", p->x.name);
 }
 
 static void import(Symbol p) {
@@ -496,7 +511,7 @@ static void segment(int n) {
 	}
 }
 static void space(int n) {
-	print(".space %d\n", roundup(n, 4));
+	print("    .space %d\n", roundup(n, 4));
 
 }
 static void blkloop(int dreg, int doff, int sreg, int soff, int size, int tmps[]) {
