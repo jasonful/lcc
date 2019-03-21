@@ -1,8 +1,29 @@
 %{
+/*
+	Copyright 2019 Jason Fuller
 
-#define TMASKIREG 0x0000000F
-#define VMASKIREG 0x0000000F
-#define RMASKIREG 0x00000001
+    This file is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This file is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program in the doc/COPYING file.
+	If not, see <https://www.gnu.org/licenses/>.
+
+	This notice applies only to this file.  Most of lcc is governed by 
+	a different license which can be found in the CPYRIGHT file in the
+	root directory of the source code.
+*/
+
+#define TMASKIREG 0xF
+#define VMASKIREG 0xF
+#define RMASKIREG 0x1
 
 #include "c.h"
 #define NODEPTR_TYPE Node
@@ -177,18 +198,14 @@ static char* currentfunction;
 reg:  INDIRI2(VREGP)     "# read register\n"
 reg:  INDIRU2(VREGP)     "# read register\n"
 reg:  INDIRP2(VREGP)     "# read register\n"
-
 stmt: ASGNI2(VREGP,reg)  "# write register\n"
 stmt: ASGNU2(VREGP,reg)  "# write register\n"
 stmt: ASGNP2(VREGP,reg)  "# write register\n"
-
 con: CNSTI2  "%a"
 con: CNSTU2  "%a"
 zero: CNSTI2 "# compare to zero" range(a,0,0)
 zero: CNSTU2 "# compare to zero" range(a,0,0)
-
 stmt: reg  ""
-
 acon: con     "%0"
 acon: ADDRGP2 "%a"
 acon: ADDRLP2 "%a"
@@ -200,8 +217,6 @@ stmt: ASGNP2(reg,reg)  "st %1,%0,0\n"  1
 reg:  INDIRI2(reg)     "ld %c,%0,0\n"  1
 reg:  INDIRU2(reg)     "ld %c,%0,0\n"  1
 reg:  INDIRP2(reg)     "ld %c,%0,0\n"  1
-
-
 reg:  INDIRF2(addr)     ".error \u0022float not supported\u0022\n"  1
 stmt: ASGNF2(addr,reg)  ".error \u0022float not supported\u0022\n"  1
 reg: DIVI2(reg,reg)  ".error \u0022Division not supported.  Try right shift >>\u0022\n"   1
@@ -213,28 +228,27 @@ reg: MULU2(reg,reg)  ".error \u0022Multiplication not supported. Try left shift 
 rc:  con            "%0"
 rc:  reg            "%0"
 
-reg: ADDI2(reg,rc)   "add %c,%0,%1\n"  1
+reg: ADDI2(reg,rc)   ".error \u0022Signed addition not supported.  Use unsigned.\u0022\n"  1
 reg: ADDP2(reg,rc)   "add %c,%0,%1\n"  1
 reg: ADDU2(reg,rc)   "add %c,%0,%1\n"  1
 reg: BANDI2(reg,rc)  "and %c,%0,%1\n"  1
 reg: BORI2(reg,rc)   "or  %c,%0,%1\n"    1
-reg: BXORI2(reg,rc)  ".error \u0022xor not supported\u0022\n"   1
+reg: BXORI2(reg,rc)  "and r3,%0,%1 # { %c = %0 ^ %1\nadd %0,%0,%1\nsub %0,%0,r3\nsub %c,%0,r3 # }\n"   1
 reg: BANDU2(reg,rc)  "and %c,%0,%1\n"   1
 reg: BORU2(reg,rc)   "or %c,%0,%1\n"    1
-reg: BXORU2(reg,rc)  ".error \u0022xor not supported\u0022\n"   1
-reg: SUBI2(reg,rc)   "sub %c,%0,%1\n"  1
+reg: BXORU2(reg,rc)  "and r3,%0,%1 # { %c = %0 ^ %1\nadd %0,%0,%1\nsub %0,%0,r3\nsub %c,%0,r3 # }\n"   1
+reg: SUBI2(reg,rc)   ".error \u0022Signed subtraction not supported.  Use unsigned.\u0022\n"  1
 reg: SUBP2(reg,rc)   "sub %c,%0,%1\n"  1
 reg: SUBU2(reg,rc)   "sub %c,%0,%1\n"  1
 rc16bit: CNSTI2         "%a"  range(a,0,0xFFFF)
 rc16bit: reg            "%0"
-
 reg: LSHI2(reg,rc16bit)  "lsh %c,%0,%1\n"  1
 reg: LSHU2(reg,rc16bit)  "lsh %c,%0,%1\n"  1
-reg: RSHI2(reg,rc16bit)  "rsh %c,%0,%1\n"  1
+reg: RSHI2(reg,rc16bit)  ".error \u0022Signed right-shift not supported.  Use unsigned.\u0022\n"  1
 reg: RSHU2(reg,rc16bit)  "rsh %c,%0,%1\n"  1
-reg: BCOMI2(reg)  "move %c, 0\nsub %c,%c,%0\nsub %c, %c, 1\n"   1
-reg: BCOMU2(reg)  "move %c, 0\nsub %c,%c,%0\nsub %c, %c, 1\n"   1
-reg: NEGI2(reg)   "move %c, 0\nsub %c,%c,%0\n"  1
+reg: BCOMI2(reg)  "move r3,0 # {%c = ~%0\nsub %c,r3,%0\nsub %c, %c, 1 # }\n"   1
+reg: BCOMU2(reg)  "move r3,0 # {%c = ~%0\nsub %c,r3,%0\nsub %c, %c, 1 # }\n"   1
+reg: NEGI2(reg)   "move r3,0\nsub %c,r3,%0\n"  1
 reg: LOADI2(reg)  "move %c,%0\n"  move(a)
 reg: LOADU2(reg)  "move %c,%0\n"  move(a)
 reg: ADDF2(reg,reg)  ".error \u0022floating point addition not supported\u0022\n"  1
@@ -242,31 +256,31 @@ reg: DIVF2(reg,reg)  ".error \u0022floating point division not supported\u0022\n
 reg: MULF2(reg,reg)  ".error \u0022floating point multiplication not supported\u0022\n"  1
 reg: SUBF2(reg,reg)  ".error \u0022floating point subtraction not supported\u0022\n"  1
 reg: NEGF2(reg)      ".error \u0022floating point negation not supported\u0022\n"       1
-reg: CVII2(reg)  "move %c, %0\n"  2
-reg: CVUI2(reg)  "move %c, %0\n"  1
-reg: CVUU2(reg)  "move %c, %0\n"  1
+reg: CVII2(reg)  "?move %c,%0\n"  move(a)
+reg: CVUI2(reg)  "?move %c,%0\n"  move(a)
+reg: CVUU2(reg)  "?move %c,%0\n"  move(a)
 reg: CVFF2(reg)  ".error \u0022floating point not supported\u0022\n"  1
 reg: CVIF2(reg)  ".error \u0022floating point not supported\u0022\n"  2
 reg: CVFI2(reg)  ".error \u0022floating point not supported\u0022\n" 
 stmt: LABELV  "%a:\n"
 stmt: JUMPV(acon)  "jump %0\n"   1
 stmt: JUMPV(reg)   "jump %0\n" 
-stmt: EQI2(reg,reg)  "sub %0,%0,%1\njump %a, eq\n"   1
-stmt: EQU2(reg,reg)  "sub %0,%0,%1\njump %a, eq\n"   1
-stmt: EQI2(reg,zero) "move %0,%0 #if %0 == 0 \njump %a, eq\n"   1
-stmt: EQU2(reg,zero) "move %0,%0 #if %0 == 0 \njump %a, eq\n"   1
-stmt: GEI2(reg,reg)  "sub %0,%1,%0\njump %a, eq\njump %a, ov\n"   1
-stmt: GEU2(reg,reg)  "sub %0,%1,%0\njump %a, eq\njump %a, ov\n"  1
-stmt: GTI2(reg,reg)  "sub %0,%1,%0\njump %a, ov\n"   1
-stmt: GTU2(reg,reg)  "sub %0,%1,%0\njump %a, ov\n"  1
-stmt: LEI2(reg,reg)  "sub %0,%0,%1\njump %a, eq\njump %a, ov\n"   1
-stmt: LEU2(reg,reg)  "sub %0,%0,%1\njump %a, eq\njump %a, ov\n"  1
-stmt: LTI2(reg,reg)  "sub %0,%0,%1\njump %a, ov\n"   1
-stmt: LTU2(reg,reg)  "sub %0,%0,%1\njump %a, ov\n"  1
+stmt: EQI2(reg,reg)  "sub %0,%0,%1 #if %0==%1 goto %a \njump %a, eq\n"   1
+stmt: EQU2(reg,reg)  "sub %0,%0,%1 #if %0==%1 \njump %a, eq\n"   1
+stmt: EQI2(reg,zero) "move %0,%0 #if %0 == 0 goto %a \njump %a, eq\n"   1
+stmt: EQU2(reg,zero) "move %0,%0 #if %0 == 0 goto %a\njump %a, eq\n"   1
+stmt: GEI2(reg,reg)  ".error \u0022Signed greater-than-or-equal not supported.  Use unsigned.\u0022\n"   1
+stmt: GEU2(reg,reg)  "sub %0,%1,%0 #if %0 >= %1 goto %a\njump %a, eq\njump %a, ov\n"  1
+stmt: GTI2(reg,reg)  ".error \u0022Signed greater-than not supported.  Use unsigned.\u0022\n"   1
+stmt: GTU2(reg,reg)  "sub %0,%1,%0 #if %0 > %1 goto %a\njump %a, ov\n"  1
+stmt: LEI2(reg,reg)  ".error \u0022Signed less-than-or-equal not supported.  Use unsigned.\u0022\n"   1
+stmt: LEU2(reg,reg)  "sub %0,%0,%1 #if %0 <= %1 goto %a\njump %a, eq\njump %a, ov\n"  1
+stmt: LTI2(reg,reg)  ".error \u0022Signed less-than-or-equal not supported.  Use unsigned.\u0022\n"   1
+stmt: LTU2(reg,reg)  "sub %0,%0,%1 #if %0 < %1 goto %a\njump %a, ov\n"  1
 stmt: NEI2(reg,reg)  "sub %0,%0,%1\njump 1f, eq\njump %a\n1:\n"   1
-stmt: NEU2(reg,reg)  "sub %0,%0,%1\njump 1f, eq\njump %a\n1:\n"   1
-stmt: NEI2(reg,zero) "move %0,%0 #if %0 == 0 \njump 1f, eq\njump %a\n1:\n"   1
-stmt: NEU2(reg,zero) "move %0,%0 #if %0 == 0 \njump 1f, eq\njump %a\n1:\n"   1
+stmt: NEU2(reg,reg)  "sub %0,%0,%1 #if %0 != %1 goto %a\njump 1f, eq\njump %a\n1:\n"   1
+stmt: NEI2(reg,zero) "move %0,%0 #if %0 goto %a \njump 1f, eq\njump %a\n1:\n"   1
+stmt: NEU2(reg,zero) "move %0,%0 #if %0 goto %a \njump 1f, eq\njump %a\n1:\n"   1
 stmt: EQF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
 stmt: LEF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
 stmt: LTF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
@@ -275,7 +289,6 @@ stmt: GTF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
 stmt: NEF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
 ar:   ADDRGP2     "%a"
 ar:   ADDRLP2     "%a"
-
 reg:  CALLF2(ar)  ".error \u0022floating point not supported\u0022\n"  1
 reg:  CALLI2(ar)  "# emit2\n"  1
 reg:  CALLP2(ar)  "# emit2\n"  1
@@ -292,10 +305,10 @@ stmt: ARGF2(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
 stmt: ARGI2(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  LBURG_MAX
 stmt: ARGP2(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  LBURG_MAX
 stmt: ARGU2(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  LBURG_MAX
- 
 stmt: ARGI2(con)  "# emit2\n"  
 stmt: ARGP2(con)  "# emit2\n"  
 stmt: ARGU2(con)  "# emit2\n"  
+stmt: ASGNB(reg, INDIRB(reg))  "stage_rst \nstage_inc %a \n1: \nld r2, %1, 0 \nst r2, %0, 0 \nadd %1, %1, 1 \nadd %0, %0, 1 \nstage_dec 4 \njumps 1b, 0, GT\n"  1
 
 %%
 static void progend(void){
@@ -319,7 +332,7 @@ static void progbeg(int argc, char *argv[]) {
         parseflags(argc, argv);
  
         for (i = 0; i < 4; i++)
-                ireg[i]  = mkreg("R%d", i, /*mask*/1, /*set*/IREG);
+                ireg[i]  = mkreg("r%d", i, /*mask*/1, /*set*/IREG);
         iregw  = mkwildcard(ireg);
         tmask[IREG] = TMASKIREG; 
         vmask[IREG] = VMASKIREG; 
@@ -348,6 +361,14 @@ static void target(Node p) {
         case RET+I: case RET+U: case RET+P:
                 rtarget(p, 0, ireg[0]);
                 break;
+
+		case BXOR+I: case BXOR+U: case BCOM+I: case BCOM+U: case NEG+I:
+			setreg(p, ireg[0]); // Could be any register other than R3 because these instruction sequences clobber R3
+
+		case ASGN+B:
+			rtarget(p,          0, ireg[0]); /* dst */
+			rtarget(p->kids[1], 0, ireg[1]); /* src */
+			break;
         }
 }
 static void clobber(Node p) {
@@ -355,11 +376,17 @@ static void clobber(Node p) {
         switch (specific(p->op)) {
 
         case CALL+I: case CALL+P: case CALL+U:
-                //spill(TMASKIREG,          IREG, p);
-                break;
+            //spill(TMASKIREG, IREG, p);
+            break;
         case CALL+V:
-                //spill(TMASKIREG | RMASKIREG, IREG, p);
-                break;
+            //spill(TMASKIREG | RMASKIREG, IREG, p);
+            break;
+		case BXOR+I: case BXOR+U: case BCOM+I: case BCOM+U: case NEG+I:
+			spill(1 << 3 /*r3*/, IREG, p);
+			break;
+		case ASGN+B:
+			spill(1 << 2 /*r2*/, IREG, p);
+			break;
         }
 }
 

@@ -2,18 +2,21 @@
 A C compiler targeting the ULP coprocessor on the ESP32 chip.  It is based on the lcc compiler written by David Hanson and Chris Fraser.  The code-generator for the ULP was written by Jason Fuller (me), and all bugs are mine.
 
 ### Installation
-Currently only Windows is supported.  Lcc is compilable under Linux, but it didn’t “just work” and I didn’t spend more time on it. Instructions
+Currently only Windows is supported.  (Lcc is compilable under Linux, but I haven't taken the time to get it to work.)
 1. set the ULPCCDIR environment variable to a directory of your choosing
 1. Download [http://github.com/jasonful/lcc/ulpcc/release.zip](http://github.com/jasonful/lcc/ulpcc/release.zip) and extract to %ULPCCDIR%
 1. set IDF_PATH to where you installed the ESP IDF
+1. Add %ULPCCDIR%\bin to your PATH
 
 ### Usage
 1. `ulpcc foo.c` will generate foo.S
 1. Build foo.S as you normally would a hand-written .S file.
-1. Globals are exported with a ulp_ prefix as you would expect
+1. Globals in foo.c are exported with a ulp_ prefix just like .globals in a foo.S.
 
 ### Not supported:
 1. Floating point
+1. Signed arithmetic.  Despite what some parts of the documentation may imply, the ULP coprocessor has no support for signed arithmetic.  
+This means you should always use `unsigned int` (or `unsigned`) instead of `int`.
 1. Function calls. This may seem like a large restriction, and it is, but:
 	1. I did not want to sacrifice one of the four registers for a stack pointer.  
 	1. Most ULP programs are relatively simple.
@@ -23,9 +26,9 @@ Currently only Windows is supported.  Lcc is compilable under Linux, but it didn
 1. Division, multiplication, mod
 
 ### Pseudo-functions
-You can call the following ULP instructions as if they were functions: adc, halt, i2c_rd, i2c_wr, reg_rd, reg_wr, sleep, tsens, wait, wake.  
+You can call the following ULP instructions as if they were functions: `adc`, `halt`, `i2c_rd`, `i2c_wr`, `reg_rd`, `reg_wr`, `sleep`, `tsens`, `wait`, `wake`.  
 
-Pseudo-functions that take parameters must take constants (not expressions).
+Pseudo-functions that take parameters must take constants (not expressions) because the machine instructions take constants.
 
 See ulp_c.h for details.
 
