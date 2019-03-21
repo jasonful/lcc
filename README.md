@@ -37,6 +37,7 @@ Pseudo-functions that take parameters must take constants (not expressions) beca
 See ulp_c.h for details.
 
 ### Notes:
+1. The compiler automatically inserts a `halt` at the end of entry().
 1. The Stage_cnt register and its corresponding instructions are so idiosyncratic, I don't think they can be integrated with lcc.  So they are not used.  This shouldn’t hurt anything.
 1. All data types are 2 bytes in size.
 1. When something is not supported, I try to generate a friendly error message in the .S file.  But it’s possible you will hit a cryptic assert in lcc.

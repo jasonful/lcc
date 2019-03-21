@@ -217,76 +217,76 @@ stmt: ASGNP2(reg,reg)  "st %1,%0,0\n"  1
 reg:  INDIRI2(reg)     "ld %c,%0,0\n"  1
 reg:  INDIRU2(reg)     "ld %c,%0,0\n"  1
 reg:  INDIRP2(reg)     "ld %c,%0,0\n"  1
-reg:  INDIRF2(addr)     ".error \u0022float not supported\u0022\n"  1
-stmt: ASGNF2(addr,reg)  ".error \u0022float not supported\u0022\n"  1
-reg: DIVI2(reg,reg)  ".error \u0022Division not supported.  Try right shift >>\u0022\n"   1
-reg: DIVU2(reg,reg)  ".error \u0022Division not supported.  Try right shift >>\u0022\n"  1
-reg: MODI2(reg,reg)  ".error \u0022Mod not supported\u0022\n"   1
-reg: MODU2(reg,reg)  ".error \u0022Mod not supported\u0022\n"  1
-reg: MULI2(reg,reg)  ".error \u0022Multiplication not supported. Try left shift <<\u0022\n"   1
-reg: MULU2(reg,reg)  ".error \u0022Multiplication not supported. Try left shift <<\u0022\n"   1
+reg:  INDIRF2(addr)     ".error \u0022float not supported\u0022\n"  LBURG_MAX
+stmt: ASGNF2(addr,reg)  ".error \u0022float not supported\u0022\n"  LBURG_MAX
+reg: DIVI2(reg,reg)  ".error \u0022Division not supported.  Try right shift >>\u0022\n"   LBURG_MAX
+reg: DIVU2(reg,reg)  ".error \u0022Division not supported.  Try right shift >>\u0022\n"  LBURG_MAX
+reg: MODI2(reg,reg)  ".error \u0022Mod not supported\u0022\n"   LBURG_MAX
+reg: MODU2(reg,reg)  ".error \u0022Mod not supported\u0022\n"  LBURG_MAX
+reg: MULI2(reg,reg)  ".error \u0022Multiplication not supported. Try left shift <<\u0022\n"   LBURG_MAX
+reg: MULU2(reg,reg)  ".error \u0022Multiplication not supported. Try left shift <<\u0022\n"   LBURG_MAX
 rc:  con            "%0"
 rc:  reg            "%0"
 
-reg: ADDI2(reg,rc)   ".error \u0022Signed addition not supported.  Use unsigned.\u0022\n"  1
+reg: ADDI2(reg,rc)   ".error \u0022Signed addition not supported.  Use unsigned.\u0022\n"  LBURG_MAX
 reg: ADDP2(reg,rc)   "add %c,%0,%1\n"  1
 reg: ADDU2(reg,rc)   "add %c,%0,%1\n"  1
 reg: BANDI2(reg,rc)  "and %c,%0,%1\n"  1
-reg: BORI2(reg,rc)   "or  %c,%0,%1\n"    1
-reg: BXORI2(reg,rc)  "and r3,%0,%1 # { %c = %0 ^ %1\nadd %0,%0,%1\nsub %0,%0,r3\nsub %c,%0,r3 # }\n"   1
-reg: BANDU2(reg,rc)  "and %c,%0,%1\n"   1
-reg: BORU2(reg,rc)   "or %c,%0,%1\n"    1
-reg: BXORU2(reg,rc)  "and r3,%0,%1 # { %c = %0 ^ %1\nadd %0,%0,%1\nsub %0,%0,r3\nsub %c,%0,r3 # }\n"   1
-reg: SUBI2(reg,rc)   ".error \u0022Signed subtraction not supported.  Use unsigned.\u0022\n"  1
+reg: BORI2(reg,rc)   "or  %c,%0,%1\n"  1
+reg: BXORI2(reg,rc)  "and r3,%0,%1 # { %c = %0 ^ %1\nadd %0,%0,%1\nsub %0,%0,r3\nsub %c,%0,r3 # }\n" 4
+reg: BANDU2(reg,rc)  "and %c,%0,%1\n"  1
+reg: BORU2(reg,rc)   "or %c,%0,%1\n"   1
+reg: BXORU2(reg,rc)  "and r3,%0,%1 # { %c = %0 ^ %1\nadd %0,%0,%1\nsub %0,%0,r3\nsub %c,%0,r3 # }\n" 4
+reg: SUBI2(reg,rc)   ".error \u0022Signed subtraction not supported.  Use unsigned.\u0022\n"  LBURG_MAX
 reg: SUBP2(reg,rc)   "sub %c,%0,%1\n"  1
 reg: SUBU2(reg,rc)   "sub %c,%0,%1\n"  1
-rc16bit: CNSTI2         "%a"  range(a,0,0xFFFF)
+rc16bit: CNSTU2         "%a"  range(a,0,0xFFFF)
 rc16bit: reg            "%0"
 reg: LSHI2(reg,rc16bit)  "lsh %c,%0,%1\n"  1
 reg: LSHU2(reg,rc16bit)  "lsh %c,%0,%1\n"  1
-reg: RSHI2(reg,rc16bit)  ".error \u0022Signed right-shift not supported.  Use unsigned.\u0022\n"  1
+reg: RSHI2(reg,rc16bit)  ".error \u0022Signed right-shift not supported.  Use unsigned.\u0022\n"  LBURG_MAX
 reg: RSHU2(reg,rc16bit)  "rsh %c,%0,%1\n"  1
-reg: BCOMI2(reg)  "move r3,0 # {%c = ~%0\nsub %c,r3,%0\nsub %c, %c, 1 # }\n"   1
-reg: BCOMU2(reg)  "move r3,0 # {%c = ~%0\nsub %c,r3,%0\nsub %c, %c, 1 # }\n"   1
-reg: NEGI2(reg)   "move r3,0\nsub %c,r3,%0\n"  1
+reg: BCOMI2(reg)  "move r3,0 # {%c = ~%0\nsub %c,r3,%0\nsub %c, %c, 1 # }\n"   3
+reg: BCOMU2(reg)  "move r3,0 # {%c = ~%0\nsub %c,r3,%0\nsub %c, %c, 1 # }\n"   3
+reg: NEGI2(reg)   "move r3,0\nsub %c,r3,%0\n"  2
 reg: LOADI2(reg)  "move %c,%0\n"  move(a)
 reg: LOADU2(reg)  "move %c,%0\n"  move(a)
-reg: ADDF2(reg,reg)  ".error \u0022floating point addition not supported\u0022\n"  1
-reg: DIVF2(reg,reg)  ".error \u0022floating point division not supported\u0022\n"  1
-reg: MULF2(reg,reg)  ".error \u0022floating point multiplication not supported\u0022\n"  1
-reg: SUBF2(reg,reg)  ".error \u0022floating point subtraction not supported\u0022\n"  1
-reg: NEGF2(reg)      ".error \u0022floating point negation not supported\u0022\n"       1
+reg: ADDF2(reg,reg)  ".error \u0022floating point addition not supported\u0022\n"       LBURG_MAX
+reg: DIVF2(reg,reg)  ".error \u0022floating point division not supported\u0022\n"       LBURG_MAX
+reg: MULF2(reg,reg)  ".error \u0022floating point multiplication not supported\u0022\n" LBURG_MAX
+reg: SUBF2(reg,reg)  ".error \u0022floating point subtraction not supported\u0022\n"    LBURG_MAX
+reg: NEGF2(reg)      ".error \u0022floating point negation not supported\u0022\n"       LBURG_MAX
 reg: CVII2(reg)  "?move %c,%0\n"  move(a)
 reg: CVUI2(reg)  "?move %c,%0\n"  move(a)
 reg: CVUU2(reg)  "?move %c,%0\n"  move(a)
-reg: CVFF2(reg)  ".error \u0022floating point not supported\u0022\n"  1
-reg: CVIF2(reg)  ".error \u0022floating point not supported\u0022\n"  2
-reg: CVFI2(reg)  ".error \u0022floating point not supported\u0022\n" 
+reg: CVFF2(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+reg: CVIF2(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+reg: CVFI2(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
 stmt: LABELV  "%a:\n"
-stmt: JUMPV(acon)  "jump %0\n"   1
-stmt: JUMPV(reg)   "jump %0\n" 
-stmt: EQI2(reg,reg)  "sub %0,%0,%1 #if %0==%1 goto %a \njump %a, eq\n"   1
-stmt: EQU2(reg,reg)  "sub %0,%0,%1 #if %0==%1 \njump %a, eq\n"   1
-stmt: EQI2(reg,zero) "move %0,%0 #if %0 == 0 goto %a \njump %a, eq\n"   1
-stmt: EQU2(reg,zero) "move %0,%0 #if %0 == 0 goto %a\njump %a, eq\n"   1
-stmt: GEI2(reg,reg)  ".error \u0022Signed greater-than-or-equal not supported.  Use unsigned.\u0022\n"   1
-stmt: GEU2(reg,reg)  "sub %0,%1,%0 #if %0 >= %1 goto %a\njump %a, eq\njump %a, ov\n"  1
-stmt: GTI2(reg,reg)  ".error \u0022Signed greater-than not supported.  Use unsigned.\u0022\n"   1
-stmt: GTU2(reg,reg)  "sub %0,%1,%0 #if %0 > %1 goto %a\njump %a, ov\n"  1
-stmt: LEI2(reg,reg)  ".error \u0022Signed less-than-or-equal not supported.  Use unsigned.\u0022\n"   1
-stmt: LEU2(reg,reg)  "sub %0,%0,%1 #if %0 <= %1 goto %a\njump %a, eq\njump %a, ov\n"  1
-stmt: LTI2(reg,reg)  ".error \u0022Signed less-than-or-equal not supported.  Use unsigned.\u0022\n"   1
-stmt: LTU2(reg,reg)  "sub %0,%0,%1 #if %0 < %1 goto %a\njump %a, ov\n"  1
-stmt: NEI2(reg,reg)  "sub %0,%0,%1\njump 1f, eq\njump %a\n1:\n"   1
-stmt: NEU2(reg,reg)  "sub %0,%0,%1 #if %0 != %1 goto %a\njump 1f, eq\njump %a\n1:\n"   1
-stmt: NEI2(reg,zero) "move %0,%0 #if %0 goto %a \njump 1f, eq\njump %a\n1:\n"   1
-stmt: NEU2(reg,zero) "move %0,%0 #if %0 goto %a \njump 1f, eq\njump %a\n1:\n"   1
-stmt: EQF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
-stmt: LEF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
-stmt: LTF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
-stmt: GEF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
-stmt: GTF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
-stmt: NEF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  2
+stmt: JUMPV(acon)  "jump %0\n" 1
+stmt: JUMPV(reg)   "jump %0\n" 1
+stmt: EQI2(reg,reg)  "sub %0,%0,%1 #if %0==%1 goto %a \njump %a, eq\n" 2
+stmt: EQU2(reg,reg)  "sub %0,%0,%1 #if %0==%1 goto %a \njump %a, eq\n" 2
+stmt: EQI2(reg,zero) "move %0,%0 #if %0 == 0 goto %a \njump %a, eq\n"  2
+stmt: EQU2(reg,zero) "move %0,%0 #if %0 == 0 goto %a\njump %a, eq\n"   2
+stmt: GEI2(reg,reg)  ".error \u0022Signed greater-than-or-equal not supported.  Use unsigned.\u0022\n"   LBURG_MAX
+stmt: GEU2(reg,reg)  "sub %0,%1,%0 #if %0 >= %1 goto %a\njump %a, eq\njump %a, ov\n"  3
+stmt: GTI2(reg,reg)  ".error \u0022Signed greater-than not supported.  Use unsigned.\u0022\n"   LBURG_MAX
+stmt: GTU2(reg,reg)  "sub %0,%1,%0 #if %0 > %1 goto %a\njump %a, ov\n"  2
+stmt: LEI2(reg,reg)  ".error \u0022Signed less-than-or-equal not supported.  Use unsigned.\u0022\n"   LBURG_MAX
+stmt: LEU2(reg,reg)  "sub %0,%0,%1 #if %0 <= %1 goto %a\njump %a, eq\njump %a, ov\n"  3
+stmt: LTI2(reg,reg)  ".error \u0022Signed less-than-or-equal not supported.  Use unsigned.\u0022\n"   LBURG_MAX
+stmt: LTU2(reg,reg)  "sub %0,%0,%1 #if %0 < %1 goto %a\njump %a, ov\n"  2
+stmt: NEI2(reg,reg)  "sub %0,%0,%1\njump 1f, eq\njump %a\n1:\n"   3
+stmt: NEU2(reg,reg)  "sub %0,%0,%1 #if %0 != %1 goto %a\njump 1f, eq\njump %a\n1:\n"   3
+stmt: NEI2(reg,zero) "move %0,%0 #if %0 goto %a \njump 1f, eq\njump %a\n1:\n"   3
+stmt: NEU2(reg,zero) "move %0,%0 #if %0 goto %a \njump 1f, eq\njump %a\n1:\n"   3
+stmt: EQF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+stmt: LEF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+stmt: LTF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+stmt: GEF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+stmt: GTF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+stmt: NEF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
 ar:   ADDRGP2     "%a"
 ar:   ADDRLP2     "%a"
 reg:  CALLF2(ar)  ".error \u0022floating point not supported\u0022\n"  1
