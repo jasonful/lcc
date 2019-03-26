@@ -160,7 +160,9 @@ static Tree addtree(int op, Tree l, Tree r) {
 		{
 			long n;
 			ty = unqual(r->type);
-			n = unqual(ty->type)->size;
+            n = unqual(ty->type)->size;
+            if (IR->ptrarith_32bit)
+                n /= 4;
 			if (n == 0)
 				error("unknown size for type `%t'\n", ty->type);
 			l = cast(l, promote(l->type));

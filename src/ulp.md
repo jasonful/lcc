@@ -20,9 +20,11 @@
 	a different license which can be found in the CPYRIGHT file in the
 	root directory of the source code.
 */
+/* Don't use r3 because it is reserved for handling spills */
+#define TMASKIREG 0x7
+/* We don't have enough registers for register variables */
+#define VMASKIREG 0x0
 
-#define TMASKIREG 0xF
-#define VMASKIREG 0xF
 #define RMASKIREG 0x1
 
 #include "c.h"
@@ -58,257 +60,260 @@ extern int sametree(Node, Node);
 
 static Symbol ireg[32];
 static Symbol iregw;
-
 static int cseg;
 static char* currentfunction;
 
 %}
 %start stmt
 
-%term CNSTF2=2065
-%term CNSTI2=2069
-%term CNSTP2=2071
-%term CNSTU2=2070
+%term CNSTF4=4113
+%term CNSTI4=4117
+%term CNSTP4=4119
+%term CNSTU4=4118
 
 %term ARGB=41
-%term ARGF2=2081
-%term ARGI2=2085
-%term ARGP2=2087
-%term ARGU2=2086
+%term ARGF4=4129
+%term ARGI4=4133
+%term ARGP4=4135
+%term ARGU4=4134
 
 %term ASGNB=57
-%term ASGNF2=2097
-%term ASGNI2=2101
-%term ASGNP2=2103
-%term ASGNU2=2102
+%term ASGNF4=4145
+%term ASGNI4=4149
+%term ASGNP4=4151
+%term ASGNU4=4150
 
 %term INDIRB=73
-%term INDIRF2=2113
-%term INDIRI2=2117
-%term INDIRP2=2119
-%term INDIRU2=2118
+%term INDIRF4=4161
+%term INDIRI4=4165
+%term INDIRP4=4167
+%term INDIRU4=4166
 
-%term CVFF2=2161
-%term CVFI2=2165
+%term CVFF4=4209
+%term CVFI4=4213
 
-%term CVIF2=2177
-%term CVII2=2181
-%term CVIU2=2182
+%term CVIF4=4225
+%term CVII4=4229
+%term CVIU4=4230
 
-%term CVPU2=2198
+%term CVPU4=4246
 
-%term CVUI2=2229
-%term CVUP2=2231
-%term CVUU2=2230
+%term CVUI4=4277
+%term CVUP4=4279
+%term CVUU4=4278
 
-%term NEGF2=2241
-%term NEGI2=2245
+%term NEGF4=4289
+%term NEGI4=4293
 
 %term CALLB=217
-%term CALLF2=2257
-%term CALLI2=2261
-%term CALLP2=2263
-%term CALLU2=2262
+%term CALLF4=4305
+%term CALLI4=4309
+%term CALLP4=4311
+%term CALLU4=4310
 %term CALLV=216
 
-%term LOADI2=2277
-%term LOADU2=2278
-
-%term RETF2=2289
-%term RETI2=2293
-%term RETP2=2295
-%term RETU2=2294
+%term RETF4=4337
+%term RETI4=4341
+%term RETP4=4343
+%term RETU4=4342
 %term RETV=248
 
-%term ADDRGP2=2311
+%term ADDRGP4=4359
 
-%term ADDRFP2=2327
+%term ADDRFP4=4375
 
-%term ADDRLP2=2343
+%term ADDRLP4=4391
 
-%term ADDF2=2353
-%term ADDI2=2357
-%term ADDP2=2359
-%term ADDU2=2358
+%term ADDF4=4401
+%term ADDI4=4405
+%term ADDP4=4407
+%term ADDU4=4406
 
-%term SUBF2=2369
-%term SUBI2=2373
-%term SUBP2=2375
-%term SUBU2=2374
+%term SUBF4=4417
+%term SUBI4=4421
+%term SUBP4=4423
+%term SUBU4=4422
 
-%term LSHI2=2389
-%term LSHU2=2390
+%term LSHI4=4437
+%term LSHU4=4438
 
-%term MODI2=2405
-%term MODU2=2406
+%term MODI4=4453
+%term MODU4=4454
 
-%term RSHI2=2421
-%term RSHU2=2422
+%term RSHI4=4469
+%term RSHU4=4470
 
-%term BANDI2=2437
-%term BANDU2=2438
+%term BANDI4=4485
+%term BANDU4=4486
 
-%term BCOMI2=2453
-%term BCOMU2=2454
+%term BCOMI4=4501
+%term BCOMU4=4502
 
-%term BORI2=2469
-%term BORU2=2470
+%term BORI4=4517
+%term BORU4=4518
 
-%term BXORI2=2485
-%term BXORU2=2486
+%term BXORI4=4533
+%term BXORU4=4534
 
-%term DIVF2=2497
-%term DIVI2=2501
-%term DIVU2=2502
+%term DIVF4=4545
+%term DIVI4=4549
+%term DIVU4=4550
 
-%term MULF2=2513
-%term MULI2=2517
-%term MULU2=2518
+%term MULF4=4561
+%term MULI4=4565
+%term MULU4=4566
 
-%term EQF2=2529
-%term EQI2=2533
-%term EQU2=2534
+%term EQF4=4577
+%term EQI4=4581
+%term EQU4=4582
 
-%term GEF2=2545
-%term GEI2=2549
-%term GEU2=2550
+%term GEF4=4593
+%term GEI4=4597
+%term GEU4=4598
 
-%term GTF2=2561
-%term GTI2=2565
-%term GTU2=2566
+%term GTF4=4609
+%term GTI4=4613
+%term GTU4=4614
 
-%term LEF2=2577
-%term LEI2=2581
-%term LEU2=2582
+%term LEF4=4625
+%term LEI4=4629
+%term LEU4=4630
 
-%term LTF2=2593
-%term LTI2=2597
-%term LTU2=2598
+%term LTF4=4641
+%term LTI4=4645
+%term LTU4=4646
 
-%term NEF2=2609
-%term NEI2=2613
-%term NEU2=2614
+%term NEF4=4657
+%term NEI4=4661
+%term NEU4=4662
 
 %term JUMPV=584
+
 %term LABELV=600
+
 %term VREGP=711
+%term LOADI4=4325
+%term LOADU4=4326
+%term LOADP4=4327
 
 %%
-
-reg:  INDIRI2(VREGP)     "# read register\n"
-reg:  INDIRU2(VREGP)     "# read register\n"
-reg:  INDIRP2(VREGP)     "# read register\n"
-stmt: ASGNI2(VREGP,reg)  "# write register\n"
-stmt: ASGNU2(VREGP,reg)  "# write register\n"
-stmt: ASGNP2(VREGP,reg)  "# write register\n"
-con: CNSTI2  "%a"
-con: CNSTU2  "%a"
-zero: CNSTI2 "# compare to zero" range(a,0,0)
-zero: CNSTU2 "# compare to zero" range(a,0,0)
+reg:  INDIRI4(VREGP)     "# read register\n"
+reg:  INDIRU4(VREGP)     "# read register\n"
+reg:  INDIRP4(VREGP)     "# read register\n"
+stmt: ASGNI4(VREGP,reg)  "# write register\n"
+stmt: ASGNU4(VREGP,reg)  "# write register\n"
+stmt: ASGNP4(VREGP,reg)  "# write register\n"
+con: CNSTI4  "%a"
+con: CNSTU4  "%a"
+zero: CNSTI4 "# compare to zero" range(a,0,0)
+zero: CNSTU4 "# compare to zero" range(a,0,0)
 stmt: reg  ""
 acon: con     "%0"
-acon: ADDRGP2 "%a"
-acon: ADDRLP2 "%a"
+acon: ADDRGP4 "%a"
+acon: ADDRLP4 "%a"
 addr: acon  "%0"
 reg:  addr  "move %c,%0\n"  1
-stmt: ASGNI2(reg,reg)  "st %1,%0,0\n"  1
-stmt: ASGNU2(reg,reg)  "st %1,%0,0\n"  1
-stmt: ASGNP2(reg,reg)  "st %1,%0,0\n"  1
-reg:  INDIRI2(reg)     "ld %c,%0,0\n"  1
-reg:  INDIRU2(reg)     "ld %c,%0,0\n"  1
-reg:  INDIRP2(reg)     "ld %c,%0,0\n"  1
-reg:  INDIRF2(addr)     ".error \u0022float not supported\u0022\n"  LBURG_MAX
-stmt: ASGNF2(addr,reg)  ".error \u0022float not supported\u0022\n"  LBURG_MAX
-reg: DIVI2(reg,reg)  ".error \u0022Division not supported.  Try right shift >>\u0022\n"   LBURG_MAX
-reg: DIVU2(reg,reg)  ".error \u0022Division not supported.  Try right shift >>\u0022\n"  LBURG_MAX
-reg: MODI2(reg,reg)  ".error \u0022Mod not supported\u0022\n"   LBURG_MAX
-reg: MODU2(reg,reg)  ".error \u0022Mod not supported\u0022\n"  LBURG_MAX
-reg: MULI2(reg,reg)  ".error \u0022Multiplication not supported. Try left shift <<\u0022\n"   LBURG_MAX
-reg: MULU2(reg,reg)  ".error \u0022Multiplication not supported. Try left shift <<\u0022\n"   LBURG_MAX
+spill: ADDRLP4 "%a"
+stmt: ASGNI4(spill, reg) "move r3, %0 # spill\nst %1, r3, 0\n"
+stmt: ASGNU4(spill, reg) "move r3, %0 # spill\nst %1, r3, 0\n"
+stmt: ASGNP4(spill, reg) "move r3, %0 # spill\nst %1, r3, 0\n"
+stmt: ASGNI4(reg,reg)  "st %1,%0,0\n"  1
+stmt: ASGNU4(reg,reg)  "st %1,%0,0\n"  1
+stmt: ASGNP4(reg,reg)  "st %1,%0,0\n"  1
+reg:  INDIRI4(reg)     "ld %c,%0,0\n"  1
+reg:  INDIRU4(reg)     "ld %c,%0,0\n"  1
+reg:  INDIRP4(reg)     "ld %c,%0,0\n"  1
+reg:  INDIRF4(addr)     ".error \u0022float not supported\u0022\n"  LBURG_MAX
+stmt: ASGNF4(addr,reg)  ".error \u0022float not supported\u0022\n"  LBURG_MAX
+reg: DIVI4(reg,reg)  ".error \u0022Division not supported.  Try right shift >>\u0022\n"   LBURG_MAX
+reg: DIVU4(reg,reg)  ".error \u0022Division not supported.  Try right shift >>\u0022\n"  LBURG_MAX
+reg: MODI4(reg,reg)  ".error \u0022Mod not supported\u0022\n"   LBURG_MAX
+reg: MODU4(reg,reg)  ".error \u0022Mod not supported\u0022\n"  LBURG_MAX
+reg: MULI4(reg,reg)  ".error \u0022Multiplication not supported. Try left shift <<\u0022\n"   LBURG_MAX
+reg: MULU4(reg,reg)  ".error \u0022Multiplication not supported. Try left shift <<\u0022\n"   LBURG_MAX
 rc:  con            "%0"
 rc:  reg            "%0"
-
-reg: ADDI2(reg,rc)   ".error \u0022Signed addition not supported.  Use unsigned.\u0022\n"  LBURG_MAX
-reg: ADDP2(reg,rc)   "add %c,%0,%1\n"  1
-reg: ADDU2(reg,rc)   "add %c,%0,%1\n"  1
-reg: BANDI2(reg,rc)  "and %c,%0,%1\n"  1
-reg: BORI2(reg,rc)   "or  %c,%0,%1\n"  1
-reg: BXORI2(reg,rc)  "and r3,%0,%1 # { %c = %0 ^ %1\nadd %0,%0,%1\nsub %0,%0,r3\nsub %c,%0,r3 # }\n" 4
-reg: BANDU2(reg,rc)  "and %c,%0,%1\n"  1
-reg: BORU2(reg,rc)   "or %c,%0,%1\n"   1
-reg: BXORU2(reg,rc)  "and r3,%0,%1 # { %c = %0 ^ %1\nadd %0,%0,%1\nsub %0,%0,r3\nsub %c,%0,r3 # }\n" 4
-reg: SUBI2(reg,rc)   ".error \u0022Signed subtraction not supported.  Use unsigned.\u0022\n"  LBURG_MAX
-reg: SUBP2(reg,rc)   "sub %c,%0,%1\n"  1
-reg: SUBU2(reg,rc)   "sub %c,%0,%1\n"  1
-rc16bit: CNSTU2         "%a"  range(a,0,0xFFFF)
+reg: ADDI4(reg,rc)   ".error \u0022Signed addition not supported.  Use unsigned.\u0022\n"  LBURG_MAX
+reg: ADDP4(reg,rc)   "add %c,%0,%1\n"  1
+reg: ADDU4(reg,rc)   "add %c,%0,%1\n"  1
+reg: BANDI4(reg,rc)  "and %c,%0,%1\n"  1
+reg: BORI4(reg,rc)   "or  %c,%0,%1\n"  1
+reg: BXORI4(reg,rc)  "and r3,%0,%1 # { %c = %0 ^ %1\nadd %0,%0,%1\nsub %0,%0,r3\nsub %c,%0,r3 # }\n" 4
+reg: BANDU4(reg,rc)  "and %c,%0,%1\n"  1
+reg: BORU4(reg,rc)   "or %c,%0,%1\n"   1
+reg: BXORU4(reg,rc)  "and r3,%0,%1 # { %c = %0 ^ %1\nadd %0,%0,%1\nsub %0,%0,r3\nsub %c,%0,r3 # }\n" 4
+reg: SUBI4(reg,rc)   ".error \u0022Signed subtraction not supported.  Use unsigned.\u0022\n"  LBURG_MAX
+reg: SUBP4(reg,rc)   "sub %c,%0,%1\n"  1
+reg: SUBU4(reg,rc)   "sub %c,%0,%1\n"  1
+rc16bit: CNSTU4         "%a"  range(a,0,0xFFFF)
 rc16bit: reg            "%0"
-reg: LSHI2(reg,rc16bit)  "lsh %c,%0,%1\n"  1
-reg: LSHU2(reg,rc16bit)  "lsh %c,%0,%1\n"  1
-reg: RSHI2(reg,rc16bit)  ".error \u0022Signed right-shift not supported.  Use unsigned.\u0022\n"  LBURG_MAX
-reg: RSHU2(reg,rc16bit)  "rsh %c,%0,%1\n"  1
-reg: BCOMI2(reg)  "move r3,0 # {%c = ~%0\nsub %c,r3,%0\nsub %c, %c, 1 # }\n"   3
-reg: BCOMU2(reg)  "move r3,0 # {%c = ~%0\nsub %c,r3,%0\nsub %c, %c, 1 # }\n"   3
-reg: NEGI2(reg)   "move r3,0\nsub %c,r3,%0\n"  2
-reg: LOADI2(reg)  "move %c,%0\n"  move(a)
-reg: LOADU2(reg)  "move %c,%0\n"  move(a)
-reg: ADDF2(reg,reg)  ".error \u0022floating point addition not supported\u0022\n"       LBURG_MAX
-reg: DIVF2(reg,reg)  ".error \u0022floating point division not supported\u0022\n"       LBURG_MAX
-reg: MULF2(reg,reg)  ".error \u0022floating point multiplication not supported\u0022\n" LBURG_MAX
-reg: SUBF2(reg,reg)  ".error \u0022floating point subtraction not supported\u0022\n"    LBURG_MAX
-reg: NEGF2(reg)      ".error \u0022floating point negation not supported\u0022\n"       LBURG_MAX
-reg: CVII2(reg)  "?move %c,%0\n"  move(a)
-reg: CVUI2(reg)  "?move %c,%0\n"  move(a)
-reg: CVUU2(reg)  "?move %c,%0\n"  move(a)
-reg: CVFF2(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-reg: CVIF2(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-reg: CVFI2(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+reg: LSHI4(reg,rc16bit)  "lsh %c,%0,%1\n"  1
+reg: LSHU4(reg,rc16bit)  "lsh %c,%0,%1\n"  1
+reg: RSHI4(reg,rc16bit)  ".error \u0022Signed right-shift not supported.  Use unsigned.\u0022\n"  LBURG_MAX
+reg: RSHU4(reg,rc16bit)  "rsh %c,%0,%1\n"  1
+reg: BCOMI4(reg)  "move r3,0 # {%c = ~%0\nsub %c,r3,%0\nsub %c, %c, 1 # }\n"   3
+reg: BCOMU4(reg)  "move r3,0 # {%c = ~%0\nsub %c,r3,%0\nsub %c, %c, 1 # }\n"   3
+reg: NEGI4(reg)   "move r3,0\nsub %c,r3,%0\n"  2
+reg: LOADI4(reg)  "move %c,%0\n"  move(a)
+reg: LOADU4(reg)  "move %c,%0\n"  move(a)
+reg: ADDF4(reg,reg)  ".error \u0022floating point addition not supported\u0022\n"       LBURG_MAX
+reg: DIVF4(reg,reg)  ".error \u0022floating point division not supported\u0022\n"       LBURG_MAX
+reg: MULF4(reg,reg)  ".error \u0022floating point multiplication not supported\u0022\n" LBURG_MAX
+reg: SUBF4(reg,reg)  ".error \u0022floating point subtraction not supported\u0022\n"    LBURG_MAX
+reg: NEGF4(reg)      ".error \u0022floating point negation not supported\u0022\n"       LBURG_MAX
+reg: CVII4(reg)  "?move %c,%0\n"  move(a)
+reg: CVUI4(reg)  "?move %c,%0\n"  move(a)
+reg: CVUU4(reg)  "?move %c,%0\n"  move(a)
+reg: CVFF4(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+reg: CVIF4(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+reg: CVFI4(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
 stmt: LABELV  "%a:\n"
 stmt: JUMPV(acon)  "jump %0\n" 1
 stmt: JUMPV(reg)   "jump %0\n" 1
-stmt: EQI2(reg,reg)  "sub %0,%0,%1 #if %0==%1 goto %a \njump %a, eq\n" 2
-stmt: EQU2(reg,reg)  "sub %0,%0,%1 #if %0==%1 goto %a \njump %a, eq\n" 2
-stmt: EQI2(reg,zero) "move %0,%0 #if %0 == 0 goto %a \njump %a, eq\n"  2
-stmt: EQU2(reg,zero) "move %0,%0 #if %0 == 0 goto %a\njump %a, eq\n"   2
-stmt: GEI2(reg,reg)  ".error \u0022Signed greater-than-or-equal not supported.  Use unsigned.\u0022\n"   LBURG_MAX
-stmt: GEU2(reg,reg)  "sub %0,%1,%0 #if %0 >= %1 goto %a\njump %a, eq\njump %a, ov\n"  3
-stmt: GTI2(reg,reg)  ".error \u0022Signed greater-than not supported.  Use unsigned.\u0022\n"   LBURG_MAX
-stmt: GTU2(reg,reg)  "sub %0,%1,%0 #if %0 > %1 goto %a\njump %a, ov\n"  2
-stmt: LEI2(reg,reg)  ".error \u0022Signed less-than-or-equal not supported.  Use unsigned.\u0022\n"   LBURG_MAX
-stmt: LEU2(reg,reg)  "sub %0,%0,%1 #if %0 <= %1 goto %a\njump %a, eq\njump %a, ov\n"  3
-stmt: LTI2(reg,reg)  ".error \u0022Signed less-than-or-equal not supported.  Use unsigned.\u0022\n"   LBURG_MAX
-stmt: LTU2(reg,reg)  "sub %0,%0,%1 #if %0 < %1 goto %a\njump %a, ov\n"  2
-stmt: NEI2(reg,reg)  "sub %0,%0,%1\njump 1f, eq\njump %a\n1:\n"   3
-stmt: NEU2(reg,reg)  "sub %0,%0,%1 #if %0 != %1 goto %a\njump 1f, eq\njump %a\n1:\n"   3
-stmt: NEI2(reg,zero) "move %0,%0 #if %0 goto %a \njump 1f, eq\njump %a\n1:\n"   3
-stmt: NEU2(reg,zero) "move %0,%0 #if %0 goto %a \njump 1f, eq\njump %a\n1:\n"   3
-stmt: EQF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-stmt: LEF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-stmt: LTF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-stmt: GEF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-stmt: GTF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-stmt: NEF2(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-ar:   ADDRGP2     "%a"
-ar:   ADDRLP2     "%a"
-reg:  CALLF2(ar)  ".error \u0022floating point not supported\u0022\n"  1
-reg:  CALLI2(ar)  "# emit2\n"  1
-reg:  CALLP2(ar)  "# emit2\n"  1
-reg:  CALLU2(ar)  "# emit2\n"  1
+stmt: EQI4(reg,reg)  "sub %0,%0,%1 #{ if %0==%1 goto %a \njump 1f, eq\nadd %0,%0,%1\njump 2f\n1:\nadd %0,%0,%1\njump %a\n2:           #}\n" 2
+stmt: EQU4(reg,reg)  "sub %0,%0,%1 #{ if %0==%1 goto %a \njump 1f, eq\nadd %0,%0,%1\njump 2f\n1:\nadd %0,%0,%1\njump %a\n2:           #}\n" 2
+stmt: EQI4(reg,zero) "move %0,%0 #if %0 == 0 goto %a \njump %a, eq\n"  2
+stmt: EQU4(reg,zero) "move %0,%0 #if %0 == 0 goto %a\njump %a, eq\n"   2
+stmt: GEI4(reg,reg)  ".error \u0022Signed greater-than-or-equal not supported.  Use unsigned.\u0022\n"   LBURG_MAX
+stmt: GEU4(reg,reg)  "sub %1,%1,%0 #{ if %0 >= %1 goto %a\nadd %1,%1,%0\njump %a, eq\njump %a, ov #}\n"  3
+stmt: GTI4(reg,reg)  ".error \u0022Signed greater-than not supported.  Use unsigned.\u0022\n"   LBURG_MAX
+stmt: GTU4(reg,reg)  "sub %1,%1,%0 #{ if %0 > %1 goto %a\nadd %1,%1,%0\njump %a, ov #}\n"  2
+stmt: LEI4(reg,reg)  ".error \u0022Signed less-than-or-equal not supported.  Use unsigned.\u0022\n"   LBURG_MAX
+stmt: LEU4(reg,reg)  "sub %0,%0,%1 #{ if %0 <= %1 goto %a\nadd %0,%0,%1\njump %a, eq\njump %a, ov #}\n"  3
+stmt: LTI4(reg,reg)  ".error \u0022Signed less-than not supported.  Use unsigned.\u0022\n"   LBURG_MAX
+stmt: LTU4(reg,reg)  "sub %0,%0,%1 #{ if %0 < %1 goto %a\nadd %0,%0,%1\njump %a, ov #}\n"  2
+stmt: NEI4(reg,reg)  "sub %0,%0,%1 #{ if %0 != %1 goto %a\nadd %0,%0,%1\njump 1f, eq\njump %a\n1:           #}\n"   3
+stmt: NEU4(reg,reg)  "sub %0,%0,%1 #{ if %0 != %1 goto %a\nadd %0,%0,%1\njump 1f, eq\njump %a\n1:           #}\n"   3
+stmt: NEI4(reg,zero) "move %0,%0 #{ if %0 goto %a \njump 1f, eq\njump %a\n1:           #}\n"   3
+stmt: NEU4(reg,zero) "move %0,%0 #{ if %0 goto %a \njump 1f, eq\njump %a\n1:           #}\n"   3
+stmt: EQF4(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+stmt: LEF4(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+stmt: LTF4(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+stmt: GEF4(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+stmt: GTF4(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+stmt: NEF4(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+ar:   ADDRGP4     "%a"
+ar:   ADDRLP4     "%a"
+reg:  CALLF4(ar)  ".error \u0022floating point not supported\u0022\n"  1
+reg:  CALLI4(ar)  "# emit2\n"  1
+reg:  CALLP4(ar)  "# emit2\n"  1
+reg:  CALLU4(ar)  "# emit2\n"  1
 stmt: CALLV(ar)   "# emit2\n"  1
 ar: reg    "%0"
-ar: CNSTP2  "%a"   
-stmt: RETF2(reg)  ".error \u0022floating point not supported\u0022\n"  1
-stmt: RETI2(reg)  "# ret\n"  1
-stmt: RETU2(reg)  "# ret\n"  1
-stmt: RETP2(reg)  "# ret\n"  1
+ar: CNSTP4  "%a"   
+stmt: RETF4(reg)  ".error \u0022floating point not supported\u0022\n"  1
+stmt: RETI4(reg)  "# ret\n"  1
+stmt: RETU4(reg)  "# ret\n"  1
+stmt: RETP4(reg)  "# ret\n"  1
 stmt: RETV(reg)   "# ret\n"  1
-stmt: ARGF2(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-stmt: ARGI2(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  LBURG_MAX
-stmt: ARGP2(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  LBURG_MAX
-stmt: ARGU2(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  LBURG_MAX
-stmt: ARGI2(con)  "# emit2\n"  
-stmt: ARGP2(con)  "# emit2\n"  
-stmt: ARGU2(con)  "# emit2\n"  
-stmt: ASGNB(reg, INDIRB(reg))  "stage_rst \nstage_inc %a \n1: \nld r2, %1, 0 \nst r2, %0, 0 \nadd %1, %1, 1 \nadd %0, %0, 1 \nstage_dec 4 \njumps 1b, 0, GT\n"  1
+stmt: ARGF4(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+stmt: ARGI4(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  LBURG_MAX
+stmt: ARGP4(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  LBURG_MAX
+stmt: ARGU4(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  LBURG_MAX
+stmt: ARGI4(con)  "# emit2\n"  
+stmt: ARGP4(con)  "# emit2\n"  
+stmt: ARGU4(con)  "# emit2\n"  
+stmt: ASGNB(reg, INDIRB(reg))  "stage_rst #{ memcpy(%0, %1, %a)\nstage_inc %a \n1: \nld r2, %1, 0 \nst r2, %0, 0 \nadd %1, %1, 1 \nadd %0, %0, 1 \nstage_dec 4 \njumps 1b, 0, gt #}\n"  1
 
 %%
 static void progend(void){
@@ -331,7 +336,7 @@ static void progbeg(int argc, char *argv[]) {
 
         parseflags(argc, argv);
  
-        for (i = 0; i < 4; i++)
+        for (i = 0; i < 3; i++)
                 ireg[i]  = mkreg("r%d", i, /*mask*/1, /*set*/IREG);
         iregw  = mkwildcard(ireg);
         tmask[IREG] = TMASKIREG; 
@@ -350,26 +355,29 @@ static Symbol rmap(int opk) {
                 return 0;
         }
 }
+
 static void target(Node p) {
-        assert(p);
-        switch (specific(p->op)) {
-		case CALL+I: case CALL+P: case CALL+U:
-				/* Even intrinsic functions return their value in R0 */
-                setreg(p, ireg[0]);
-                break;
+    assert(p);
+
+    switch (specific(p->op)) {
+	case CALL+I: case CALL+P: case CALL+U:
+		/* Even intrinsic functions return their value in R0 */
+        setreg(p, ireg[0]);
+        break;
  
-        case RET+I: case RET+U: case RET+P:
-                rtarget(p, 0, ireg[0]);
-                break;
+    case RET+I: case RET+U: case RET+P:
+        rtarget(p, 0, ireg[0]);
+        break;
 
-		case BXOR+I: case BXOR+U: case BCOM+I: case BCOM+U: case NEG+I:
-			setreg(p, ireg[0]); // Could be any register other than R3 because these instruction sequences clobber R3
+	case BXOR+I: case BXOR+U: case BCOM+I: case BCOM+U: case NEG+I:
+		setreg(p, ireg[0]); // Could be any register other than R3 because these instruction sequences clobber R3
+		break;
 
-		case ASGN+B:
-			rtarget(p,          0, ireg[0]); /* dst */
-			rtarget(p->kids[1], 0, ireg[1]); /* src */
-			break;
-        }
+	case ASGN+B:
+		rtarget(p,          0, ireg[0]); /* dst */
+		rtarget(p->kids[1], 0, ireg[1]); /* src */
+		break;
+    }
 }
 static void clobber(Node p) {
         assert(p);
@@ -517,12 +525,11 @@ static void emit2(Node p) {
 }
 
 static void doarg(Node p) {
-
 }
 
 static void local(Symbol p) {
 	if (askregvar(p, rmap(ttob(p->type))) == 0) {
-		/* Declare a new local (although our implementation is quite global */
+		/* Declare a new local (although our implementation is quite global) */
 		int oldseg = cseg;		
 		assert(p->sclass == AUTO);
 
@@ -570,45 +577,45 @@ static void defaddress(Symbol p) {
 }
 
 static void defstring(int n, char *str) {
-        char *s;
+    char *s;
 
-        for (s = str; s < str + n; s++)
-                print(".byte %d\n", (*s)&0377);
+    for (s = str; s < str + n; s++)
+            print(".byte %d\n", (*s)&0377);
 }
 
 static void export(Symbol p) {
-        print("    .global %s\n", p->x.name);
+    print("    .global %s\n", p->x.name);
 }
 
 static void import(Symbol p) {
-        if (!isfunc(p->type))
-                print(".error \"importing symbols not supported\n");
+    if (!isfunc(p->type))
+            print(".error \"importing symbols not supported\n");
 }
 
 static void defsymbol(Symbol p) {
-        if (p->scope >= LOCAL && p->sclass == STATIC)
-                p->x.name = stringf("L.%d", genlabel(1));
-        else if (p->generated)
-                p->x.name = stringf("L.%s", p->name);
-        else
-                assert(p->scope != CONSTANTS || isint(p->type) || isptr(p->type)),
-                p->x.name = p->name;
+    if (p->scope >= LOCAL && p->sclass == STATIC)
+            p->x.name = stringf("L.%d", genlabel(1));
+    else if (p->generated)
+            p->x.name = stringf("L.%s", p->name);
+    else
+            assert(p->scope != CONSTANTS || isint(p->type) || isptr(p->type)),
+            p->x.name = p->name;
 }
 
 static void address(Symbol q, Symbol p, long n) {
-        if (p->scope == GLOBAL
-        || p->sclass == STATIC || p->sclass == EXTERN)
-                q->x.name = stringf("%s%s%D", p->x.name,
-                        n >= 0 ? "+" : "", n);
-        else {
-                assert(n <= INT_MAX && n >= INT_MIN);
-                q->x.offset = p->x.offset + n;
-                q->x.name = stringd(q->x.offset);
-        }
+    if (p->scope == GLOBAL
+    || p->sclass == STATIC || p->sclass == EXTERN)
+            q->x.name = stringf("%s%s%D", p->x.name,
+                    n >= 0 ? "+" : "", n);
+    else {
+            assert(n <= INT_MAX && n >= INT_MIN);
+            q->x.offset = p->x.offset + n;
+            q->x.name = stringd(q->x.offset);
+    }
 }
 
 static void global(Symbol p) {
-        print("%s:\n", p->x.name);
+    print("%s:\n", p->x.name);
 }
 static void segment(int n) {
 	int oldcseg = cseg;
@@ -622,10 +629,11 @@ static void segment(int n) {
 		}
 	}
 }
+
 static void space(int n) {
 	print("    .space %d\n", roundup(n, 4));
-
 }
+
 static void blkloop(int dreg, int doff, int sreg, int soff, int size, int tmps[]) {
 	print (".error \u0022blkloop not implemnted yet\u0022\n");
 }
@@ -674,16 +682,17 @@ static void stabsym(Symbol p) {
                 (*IR->stabline)(&p->src);
 }
 Interface ulpIR = {
-        2, 2, 0,  /* char */
-        2, 2, 0,  /* short */
-        2, 2, 0,  /* int */
-        2, 2, 0,  /* long */
-        2, 2, 0,  /* long long */
-        2, 2, 0,  /* float */
-        2, 2, 0,  /* double */
-        2, 2, 0,  /* long double */
-        2, 2, 0,  /* pointer * */
-        0, 2, 0,  /* struct */
+/* size, align, outofline */
+        4, 4, 0,  /* char */
+        4, 4, 0,  /* short */
+        4, 4, 0,  /* int */
+        4, 4, 0,  /* long */
+        4, 4, 0,  /* long long */
+        4, 4, 0,  /* float */
+        4, 4, 0,  /* double */
+        4, 4, 0,  /* long double */
+        4, 4, 0,  /* pointer * */
+        0, 4, 0,  /* struct */
         1,      /* little_endian */
         0,  /* mulops_calls */
         0,  /* wants_callb */
@@ -691,6 +700,7 @@ Interface ulpIR = {
         1,  /* left_to_right */
         0/*1 for CALL?*/,  /* wants_dag */
         0,  /* unsigned_char */
+		1,  /* ptrarith_32bit */  /* ULP has weird pointer semantics: The unit is 32-bits not 8-bits */
         address,
         blockbeg,
         blockend,
@@ -729,4 +739,4 @@ Interface ulpIR = {
 
         }
 };
-static char rcsid[] = "$Id$";
+

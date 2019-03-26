@@ -23,10 +23,8 @@ This means you should always use `unsigned int` (or `unsigned`) instead of `int`
 	1. Most ULP programs are relatively simple.
 	1. If you find you need a function call, try using a macro, or gotos and globals like in the old BASIC days (yes, I'm that old).
 	1. If someone makes a compelling case to implement function calls, I’m open to considering it.
-1. Structures, pointers, and arrays.  The ULP coprocessor only lets you read the low 16 bits of a 32-bit word, and addresses are in units of 32-bits not bytes.  
-This makes pointers, arrays, and structures problematic, and I would suggest avoiding them completely.  
-Though, there are simple operations that will work, like taking and using the address of a single variable.  
-Structures can also be padded with dummy fields to account for the unreadable high 16-bits.
+1. Pointers and arrays.  The ULP coprocessor uses addresses that are in units of 32-bits not bytes.  
+This makes pointers and arrays problematic, and there are known bugs, such as using a constant index into an array.
 
 
 ### Pseudo-functions

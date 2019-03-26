@@ -1147,6 +1147,7 @@ Interface alphaIR = {
         1,  /* left_to_right */
         0,  /* wants_dag */
         0,  /* unsigned_char */
+		0,  /* ptrarith_32bit */
         address,
         blockbeg,
         blockend,
