@@ -246,6 +246,7 @@ reg: SUBI4(reg,rc)   ".error \u0022Signed subtraction not supported.  Use unsign
 reg: SUBP4(reg,rc)   "sub %c,%0,%1\n"  1
 reg: SUBU4(reg,rc)   "sub %c,%0,%1\n"  1
 rc16bit: CNSTU4         "%a"  range(a,0,0xFFFF)
+rc16bit: CNSTI4         "%a"  range(a,0,0xFFFF)
 rc16bit: reg            "%0"
 reg: LSHI4(reg,rc16bit)  "lsh %c,%0,%1\n"  1
 reg: LSHU4(reg,rc16bit)  "lsh %c,%0,%1\n"  1
