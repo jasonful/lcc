@@ -3,10 +3,12 @@
 #include <string.h>
 
 static char rcsid[] = "$Id$";
-
+/*
 #ifndef LCCDIR
 #define LCCDIR "\\progra~1\\lcc\\4.1\\bin\\"
 #endif
+*/
+#define LCCDIR
 
 char *suffixes[] = { ".c;.C", ".i;.I", ".asm;.ASM;.s;.S", ".obj;.OBJ", ".exe", 0 };
 char inputs[256] = "";
