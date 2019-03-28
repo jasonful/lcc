@@ -3,11 +3,13 @@ A C compiler targeting the ULP coprocessor on the ESP32 chip.  It is based on th
 
 ### Installation
 Currently only Windows is supported.  (Lcc is compilable under Linux, but I haven't taken the time to get it to work.)
-1. set the ULPCCDIR environment variable to a directory of your choosing
-1. Download [http://github.com/jasonful/lcc/ulpcc/release.zip](http://github.com/jasonful/lcc/ulpcc/release.zip) and extract to %ULPCCDIR%
+
+1. Download [https://github.com/jasonful/lcc/raw/master/ulpcc.zip](https://github.com/jasonful/lcc/raw/master/ulpcc.zip) 
+and extract to a directory of your choosing
+1. set the ULPCCDIR environment variable to the directory you extracted to.
 1. set IDF_PATH to where you installed the ESP IDF.  (If you do not have it installed on your Windows machine, 
 install it from [here](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/windows-setup.html).)
-1. Add %ULPCCDIR%\bin to your PATH
+1. set PATH=%PATH%;%ULPCCDIR%\bin
 
 ### Usage
 1. `ulpcc foo.c` will generate foo.S
