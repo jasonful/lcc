@@ -214,9 +214,9 @@ acon: ADDRLP4 "%a"
 addr: acon  "%0"
 reg:  addr  "move %c,%0\n"  1
 spill: ADDRLP4 "%a"
-stmt: ASGNI4(spill, reg) "move r3, %0 # spill\nst %1, r3, 0\n"
-stmt: ASGNU4(spill, reg) "move r3, %0 # spill\nst %1, r3, 0\n"
-stmt: ASGNP4(spill, reg) "move r3, %0 # spill\nst %1, r3, 0\n"
+stmt: ASGNI4(spill, reg) "move r3,%0\nst %1,r3,0\n" 2
+stmt: ASGNU4(spill, reg) "move r3,%0\nst %1,r3,0\n" 2
+stmt: ASGNP4(spill, reg) "move r3,%0\nst %1,r3,0\n" 2
 stmt: ASGNI4(reg,reg)  "st %1,%0,0\n"  1
 stmt: ASGNU4(reg,reg)  "st %1,%0,0\n"  1
 stmt: ASGNP4(reg,reg)  "st %1,%0,0\n"  1
@@ -252,8 +252,8 @@ reg: LSHI4(reg,rc16bit)  "lsh %c,%0,%1\n"  1
 reg: LSHU4(reg,rc16bit)  "lsh %c,%0,%1\n"  1
 reg: RSHI4(reg,rc16bit)  ".error \u0022Signed right-shift not supported.  Use unsigned.\u0022\n"  LBURG_MAX
 reg: RSHU4(reg,rc16bit)  "rsh %c,%0,%1\n"  1
-reg: BCOMI4(reg)  "move r3,0 # {%c = ~%0\nsub %c,r3,%0\nsub %c, %c, 1 # }\n"   3
-reg: BCOMU4(reg)  "move r3,0 # {%c = ~%0\nsub %c,r3,%0\nsub %c, %c, 1 # }\n"   3
+reg: BCOMI4(reg)  "move r3,0 # {%c = ~%0\nsub %c,r3,%0\nsub %c,%c,1 # }\n"   3
+reg: BCOMU4(reg)  "move r3,0 # {%c = ~%0\nsub %c,r3,%0\nsub %c,%c,1 # }\n"   3
 reg: NEGI4(reg)   "move r3,0\nsub %c,r3,%0\n"  2
 reg: LOADI4(reg)  "move %c,%0\n"  move(a)
 reg: LOADU4(reg)  "move %c,%0\n"  move(a)
@@ -271,20 +271,20 @@ reg: CVFI4(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
 stmt: LABELV  "%a:\n"
 stmt: JUMPV(acon)  "jump %0\n" 1
 stmt: JUMPV(reg)   "jump %0\n" 1
-stmt: EQI4(reg,reg)  "sub %0,%0,%1 #{ if %0==%1 goto %a \njump 1f, eq\nadd %0,%0,%1\njump 2f\n1:\nadd %0,%0,%1\njump %a\n2:           #}\n" 2
-stmt: EQU4(reg,reg)  "sub %0,%0,%1 #{ if %0==%1 goto %a \njump 1f, eq\nadd %0,%0,%1\njump 2f\n1:\nadd %0,%0,%1\njump %a\n2:           #}\n" 2
+stmt: EQI4(reg,reg)  "sub %0,%0,%1 #{ if %0==%1 goto %a \njump 1f, eq\nadd %0,%0,%1\njump 2f\n1:\nadd %0,%0,%1\njump %a\n2:           #}\n" 6
+stmt: EQU4(reg,reg)  "sub %0,%0,%1 #{ if %0==%1 goto %a \njump 1f, eq\nadd %0,%0,%1\njump 2f\n1:\nadd %0,%0,%1\njump %a\n2:           #}\n" 6
 stmt: EQI4(reg,zero) "move %0,%0 #if %0 == 0 goto %a \njump %a, eq\n"  2
 stmt: EQU4(reg,zero) "move %0,%0 #if %0 == 0 goto %a\njump %a, eq\n"   2
 stmt: GEI4(reg,reg)  ".error \u0022Signed greater-than-or-equal not supported.  Use unsigned.\u0022\n"   LBURG_MAX
-stmt: GEU4(reg,reg)  "sub %1,%1,%0 #{ if %0 >= %1 goto %a\nadd %1,%1,%0\njump %a, eq\njump %a, ov #}\n"  3
+stmt: GEU4(reg,reg)  "sub %1,%1,%0 #{ if %0 >= %1 goto %a\nadd %1,%1,%0\njump %a, eq\njump %a, ov #}\n"  4
 stmt: GTI4(reg,reg)  ".error \u0022Signed greater-than not supported.  Use unsigned.\u0022\n"   LBURG_MAX
-stmt: GTU4(reg,reg)  "sub %1,%1,%0 #{ if %0 > %1 goto %a\nadd %1,%1,%0\njump %a, ov #}\n"  2
+stmt: GTU4(reg,reg)  "sub %1,%1,%0 #{ if %0 > %1 goto %a\nadd %1,%1,%0\njump %a, ov #}\n"  3
 stmt: LEI4(reg,reg)  ".error \u0022Signed less-than-or-equal not supported.  Use unsigned.\u0022\n"   LBURG_MAX
 stmt: LEU4(reg,reg)  "sub %0,%0,%1 #{ if %0 <= %1 goto %a\nadd %0,%0,%1\njump %a, eq\njump %a, ov #}\n"  3
 stmt: LTI4(reg,reg)  ".error \u0022Signed less-than not supported.  Use unsigned.\u0022\n"   LBURG_MAX
-stmt: LTU4(reg,reg)  "sub %0,%0,%1 #{ if %0 < %1 goto %a\nadd %0,%0,%1\njump %a, ov #}\n"  2
-stmt: NEI4(reg,reg)  "sub %0,%0,%1 #{ if %0 != %1 goto %a\nadd %0,%0,%1\njump 1f, eq\njump %a\n1:           #}\n"   3
-stmt: NEU4(reg,reg)  "sub %0,%0,%1 #{ if %0 != %1 goto %a\nadd %0,%0,%1\njump 1f, eq\njump %a\n1:           #}\n"   3
+stmt: LTU4(reg,reg)  "sub %0,%0,%1 #{ if %0 < %1 goto %a\nadd %0,%0,%1\njump %a, ov #}\n"  3
+stmt: NEI4(reg,reg)  "sub %0,%0,%1 #{ if %0!=%1 goto %a \njump 1f, eq\nadd %0,%0,%1\njump %a\n1:\nadd %0,%0,%1 #}\n" 5
+stmt: NEU4(reg,reg)  "sub %0,%0,%1 #{ if %0!=%1 goto %a \njump 1f, eq\nadd %0,%0,%1\njump %a\n1:\nadd %0,%0,%1 #}\n" 5
 stmt: NEI4(reg,zero) "move %0,%0 #{ if %0 goto %a \njump 1f, eq\njump %a\n1:           #}\n"   3
 stmt: NEU4(reg,zero) "move %0,%0 #{ if %0 goto %a \njump 1f, eq\njump %a\n1:           #}\n"   3
 stmt: EQF4(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
@@ -314,7 +314,7 @@ stmt: ARGU4(reg)  ".error \u0022function call arguments not yet implemented\u002
 stmt: ARGI4(con)  "# emit2\n"  
 stmt: ARGP4(con)  "# emit2\n"  
 stmt: ARGU4(con)  "# emit2\n"  
-stmt: ASGNB(reg, INDIRB(reg))  "stage_rst #{ memcpy(%0, %1, %a)\nstage_inc %a \n1: \nld r2, %1, 0 \nst r2, %0, 0 \nadd %1, %1, 1 \nadd %0, %0, 1 \nstage_dec 4 \njumps 1b, 0, gt #}\n"  1
+stmt: ASGNB(reg, INDIRB(reg))  "stage_rst #{ memcpy(%0, %1, %a)\nstage_inc %a \n1: \nld r3, %1, 0 \nst r3, %0, 0 \nadd %1, %1, 1 \nadd %0, %0, 1 \nstage_dec 4 \njumps 1b, 0, gt #}\n"  8
 
 %%
 static void progend(void){
@@ -369,15 +369,6 @@ static void target(Node p) {
     case RET+I: case RET+U: case RET+P:
         rtarget(p, 0, ireg[0]);
         break;
-
-	case BXOR+I: case BXOR+U: case BCOM+I: case BCOM+U: case NEG+I:
-		setreg(p, ireg[0]); // Could be any register other than R3 because these instruction sequences clobber R3
-		break;
-
-	case ASGN+B:
-		rtarget(p,          0, ireg[0]); /* dst */
-		rtarget(p->kids[1], 0, ireg[1]); /* src */
-		break;
     }
 }
 static void clobber(Node p) {
@@ -390,12 +381,6 @@ static void clobber(Node p) {
         case CALL+V:
             //spill(TMASKIREG | RMASKIREG, IREG, p);
             break;
-		case BXOR+I: case BXOR+U: case BCOM+I: case BCOM+U: case NEG+I:
-			spill(1 << 3 /*r3*/, IREG, p);
-			break;
-		case ASGN+B:
-			spill(1 << 2 /*r2*/, IREG, p);
-			break;
         }
 }
 
@@ -604,14 +589,17 @@ static void defsymbol(Symbol p) {
 }
 
 static void address(Symbol q, Symbol p, long n) {
-    if (p->scope == GLOBAL
-    || p->sclass == STATIC || p->sclass == EXTERN)
-            q->x.name = stringf("%s%s%D", p->x.name,
-                    n >= 0 ? "+" : "", n);
-    else {
-            assert(n <= INT_MAX && n >= INT_MIN);
-            q->x.offset = p->x.offset + n;
-            q->x.name = stringd(q->x.offset);
+	if (isarray(p->type))
+		/* We multiply n by 4 because the ULP assembler divides addresses by 4 */
+		n *= 4;
+
+	if (p->scope == GLOBAL
+       || p->sclass == STATIC || p->sclass == EXTERN) {
+        q->x.name = stringf("%s%s%D", p->x.name, n >= 0 ? "+" : "", n);					
+	} else {
+        assert(n <= INT_MAX && n >= INT_MIN);
+        q->x.offset = p->x.offset + n;
+        q->x.name = stringf("%s%s%D", p->x.name, n >= 0 ? "+" : "", q->x.offset);
     }
 }
 

@@ -9,7 +9,7 @@ struct {
 unsigned rgu[5];
 unsigned rgu2[5];
 unsigned *addr_rgu;
-unsigned iequalj_test, iltj_test, igtj_test, ilej_test, igej_test, ptr_test, array_test;
+unsigned point_test, localarray_test, iequalj_test, iltj_test, igtj_test, ilej_test, igej_test, igej2_test, ptr_test, array_test;
 
 unsigned i = 0;
 unsigned j = 0;
@@ -20,12 +20,19 @@ signed s;
 
 void entry()
 {
+    unsigned localarray[5];
     point.x = 8;
     point.y = 9;
+    point.z = 10;
     point2 = point;
+    point_test = (point2.y == 9);
+
+    localarray[2] = 66;
+    localarray_test = (localarray[2] == 66);
 
     addr_rgu = &(rgu[0]);
 
+    i = 0;
     rgu[i] = 100;
     rgu[i + 1] = 101;
     rgu[i + 2] = 102;
@@ -59,11 +66,12 @@ void entry()
     igej_test = (i >= j);
 
     i = 0; j = 1;
-    iltj_test = (i < j); 
+    iltj_test = (i < j);
     i = 5;
 
     j = 4;
     igtj_test = (i > j);
+    igej2_test = (i >= j);
 
     i = 3;
     xor_test = ((i ^ 5) == 6);
@@ -73,4 +81,6 @@ void entry()
 
     s = 7;
     neg_test = ((unsigned)-s == 0xFFF9);
+
+    wake_when_ready();
 }
