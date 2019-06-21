@@ -223,17 +223,17 @@ stmt: ASGNP4(reg,reg)  "st %1,%0,0\n"  1
 reg:  INDIRI4(reg)     "ld %c,%0,0\n"  1
 reg:  INDIRU4(reg)     "ld %c,%0,0\n"  1
 reg:  INDIRP4(reg)     "ld %c,%0,0\n"  1
-reg:  INDIRF4(addr)     ".error \u0022float not supported\u0022\n"  LBURG_MAX
-stmt: ASGNF4(addr,reg)  ".error \u0022float not supported\u0022\n"  LBURG_MAX
-reg: DIVI4(reg,reg)  ".error \u0022Division not supported.  Try right shift >>\u0022\n"   LBURG_MAX
-reg: DIVU4(reg,reg)  ".error \u0022Division not supported.  Try right shift >>\u0022\n"  LBURG_MAX
-reg: MODI4(reg,reg)  ".error \u0022Mod not supported\u0022\n"   LBURG_MAX
-reg: MODU4(reg,reg)  ".error \u0022Mod not supported\u0022\n"  LBURG_MAX
-reg: MULI4(reg,reg)  ".error \u0022Multiplication not supported. Try left shift <<\u0022\n"   LBURG_MAX
-reg: MULU4(reg,reg)  ".error \u0022Multiplication not supported. Try left shift <<\u0022\n"   LBURG_MAX
+reg:  INDIRF4(addr)     ".error \x22 float not supported\x22 \n"  LBURG_MAX
+stmt: ASGNF4(addr,reg)  ".error \x22 float not supported\x22 \n"  LBURG_MAX
+reg: DIVI4(reg,reg)  ".error \x22 Division not supported.  Try right shift >>\x22 \n"   LBURG_MAX
+reg: DIVU4(reg,reg)  ".error \x22 Division not supported.  Try right shift >>\x22 \n"  LBURG_MAX
+reg: MODI4(reg,reg)  ".error \x22 Mod not supported\x22 \n"   LBURG_MAX
+reg: MODU4(reg,reg)  ".error \x22 Mod not supported\x22 \n"  LBURG_MAX
+reg: MULI4(reg,reg)  ".error \x22 Multiplication not supported. Try left shift <<\x22 \n"   LBURG_MAX
+reg: MULU4(reg,reg)  ".error \x22 Multiplication not supported. Try left shift <<\x22 \n"   LBURG_MAX
 rc:  con            "%0"
 rc:  reg            "%0"
-reg: ADDI4(reg,rc)   ".error \u0022Signed addition not supported.  Use unsigned.\u0022\n"  LBURG_MAX
+reg: ADDI4(reg,rc)   ".error \x22 Signed addition not supported.  Use unsigned.\x22 \n"  LBURG_MAX
 reg: ADDP4(reg,rc)   "add %c,%0,%1\n"  1
 reg: ADDU4(reg,rc)   "add %c,%0,%1\n"  1
 reg: BANDI4(reg,rc)  "and %c,%0,%1\n"  1
@@ -242,7 +242,7 @@ reg: BXORI4(reg,rc)  "and r3,%0,%1 # { %c = %0 ^ %1\nadd %0,%0,%1\nsub %0,%0,r3\
 reg: BANDU4(reg,rc)  "and %c,%0,%1\n"  1
 reg: BORU4(reg,rc)   "or %c,%0,%1\n"   1
 reg: BXORU4(reg,rc)  "and r3,%0,%1 # { %c = %0 ^ %1\nadd %0,%0,%1\nsub %0,%0,r3\nsub %c,%0,r3 # }\n" 4
-reg: SUBI4(reg,rc)   ".error \u0022Signed subtraction not supported.  Use unsigned.\u0022\n"  LBURG_MAX
+reg: SUBI4(reg,rc)   ".error \x22 Signed subtraction not supported.  Use unsigned.\x22 \n"  LBURG_MAX
 reg: SUBP4(reg,rc)   "sub %c,%0,%1\n"  1
 reg: SUBU4(reg,rc)   "sub %c,%0,%1\n"  1
 rc16bit: CNSTU4         "%a"  range(a,0,0xFFFF)
@@ -250,24 +250,24 @@ rc16bit: CNSTI4         "%a"  range(a,0,0xFFFF)
 rc16bit: reg            "%0"
 reg: LSHI4(reg,rc16bit)  "lsh %c,%0,%1\n"  1
 reg: LSHU4(reg,rc16bit)  "lsh %c,%0,%1\n"  1
-reg: RSHI4(reg,rc16bit)  ".error \u0022Signed right-shift not supported.  Use unsigned.\u0022\n"  LBURG_MAX
+reg: RSHI4(reg,rc16bit)  ".error \x22 Signed right-shift not supported.  Use unsigned.\x22 \n"  LBURG_MAX
 reg: RSHU4(reg,rc16bit)  "rsh %c,%0,%1\n"  1
 reg: BCOMI4(reg)  "move r3,0 # {%c = ~%0\nsub %c,r3,%0\nsub %c,%c,1 # }\n"   3
 reg: BCOMU4(reg)  "move r3,0 # {%c = ~%0\nsub %c,r3,%0\nsub %c,%c,1 # }\n"   3
 reg: NEGI4(reg)   "move r3,0\nsub %c,r3,%0\n"  2
 reg: LOADI4(reg)  "move %c,%0\n"  move(a)
 reg: LOADU4(reg)  "move %c,%0\n"  move(a)
-reg: ADDF4(reg,reg)  ".error \u0022floating point addition not supported\u0022\n"       LBURG_MAX
-reg: DIVF4(reg,reg)  ".error \u0022floating point division not supported\u0022\n"       LBURG_MAX
-reg: MULF4(reg,reg)  ".error \u0022floating point multiplication not supported\u0022\n" LBURG_MAX
-reg: SUBF4(reg,reg)  ".error \u0022floating point subtraction not supported\u0022\n"    LBURG_MAX
-reg: NEGF4(reg)      ".error \u0022floating point negation not supported\u0022\n"       LBURG_MAX
+reg: ADDF4(reg,reg)  ".error \x22 floating point addition not supported\x22 \n"       LBURG_MAX
+reg: DIVF4(reg,reg)  ".error \x22 floating point division not supported\x22 \n"       LBURG_MAX
+reg: MULF4(reg,reg)  ".error \x22 floating point multiplication not supported\x22 \n" LBURG_MAX
+reg: SUBF4(reg,reg)  ".error \x22 floating point subtraction not supported\x22 \n"    LBURG_MAX
+reg: NEGF4(reg)      ".error \x22 floating point negation not supported\x22 \n"       LBURG_MAX
 reg: CVII4(reg)  "?move %c,%0\n"  move(a)
 reg: CVUI4(reg)  "?move %c,%0\n"  move(a)
 reg: CVUU4(reg)  "?move %c,%0\n"  move(a)
-reg: CVFF4(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-reg: CVIF4(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-reg: CVFI4(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+reg: CVFF4(reg)  ".error \x22 floating point not supported\x22 \n"  LBURG_MAX
+reg: CVIF4(reg)  ".error \x22 floating point not supported\x22 \n"  LBURG_MAX
+reg: CVFI4(reg)  ".error \x22 floating point not supported\x22 \n"  LBURG_MAX
 stmt: LABELV  "%a:\n"
 stmt: JUMPV(acon)  "jump %0\n" 1
 stmt: JUMPV(reg)   "jump %0\n" 1
@@ -275,42 +275,42 @@ stmt: EQI4(reg,reg)  "sub %0,%0,%1 #{ if %0==%1 goto %a \njump 1f, eq\nadd %0,%0
 stmt: EQU4(reg,reg)  "sub %0,%0,%1 #{ if %0==%1 goto %a \njump 1f, eq\nadd %0,%0,%1\njump 2f\n1:\nadd %0,%0,%1\njump %a\n2:           #}\n" 6
 stmt: EQI4(reg,zero) "move %0,%0 #if %0 == 0 goto %a \njump %a, eq\n"  2
 stmt: EQU4(reg,zero) "move %0,%0 #if %0 == 0 goto %a\njump %a, eq\n"   2
-stmt: GEI4(reg,reg)  ".error \u0022Signed greater-than-or-equal not supported.  Use unsigned.\u0022\n"   LBURG_MAX
+stmt: GEI4(reg,reg)  ".error \x22 Signed greater-than-or-equal not supported.  Use unsigned.\x22 \n"   LBURG_MAX
 stmt: GEU4(reg,reg)  "sub %1,%1,%0 #{ if %0 >= %1 goto %a\nadd %1,%1,%0\njump %a, eq\njump %a, ov #}\n"  4
-stmt: GTI4(reg,reg)  ".error \u0022Signed greater-than not supported.  Use unsigned.\u0022\n"   LBURG_MAX
+stmt: GTI4(reg,reg)  ".error \x22 Signed greater-than not supported.  Use unsigned.\x22 \n"   LBURG_MAX
 stmt: GTU4(reg,reg)  "sub %1,%1,%0 #{ if %0 > %1 goto %a\nadd %1,%1,%0\njump %a, ov #}\n"  3
-stmt: LEI4(reg,reg)  ".error \u0022Signed less-than-or-equal not supported.  Use unsigned.\u0022\n"   LBURG_MAX
+stmt: LEI4(reg,reg)  ".error \x22 Signed less-than-or-equal not supported.  Use unsigned.\x22 \n"   LBURG_MAX
 stmt: LEU4(reg,reg)  "sub %0,%0,%1 #{ if %0 <= %1 goto %a\nadd %0,%0,%1\njump %a, eq\njump %a, ov #}\n"  3
-stmt: LTI4(reg,reg)  ".error \u0022Signed less-than not supported.  Use unsigned.\u0022\n"   LBURG_MAX
+stmt: LTI4(reg,reg)  ".error \x22 Signed less-than not supported.  Use unsigned.\x22 \n"   LBURG_MAX
 stmt: LTU4(reg,reg)  "sub %0,%0,%1 #{ if %0 < %1 goto %a\nadd %0,%0,%1\njump %a, ov #}\n"  3
 stmt: NEI4(reg,reg)  "sub %0,%0,%1 #{ if %0!=%1 goto %a \njump 1f, eq\nadd %0,%0,%1\njump %a\n1:\nadd %0,%0,%1 #}\n" 5
 stmt: NEU4(reg,reg)  "sub %0,%0,%1 #{ if %0!=%1 goto %a \njump 1f, eq\nadd %0,%0,%1\njump %a\n1:\nadd %0,%0,%1 #}\n" 5
 stmt: NEI4(reg,zero) "move %0,%0 #{ if %0 goto %a \njump 1f, eq\njump %a\n1:           #}\n"   3
 stmt: NEU4(reg,zero) "move %0,%0 #{ if %0 goto %a \njump 1f, eq\njump %a\n1:           #}\n"   3
-stmt: EQF4(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-stmt: LEF4(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-stmt: LTF4(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-stmt: GEF4(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-stmt: GTF4(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-stmt: NEF4(reg,reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
+stmt: EQF4(reg,reg)  ".error \x22 floating point not supported\x22 \n"  LBURG_MAX
+stmt: LEF4(reg,reg)  ".error \x22 floating point not supported\x22 \n"  LBURG_MAX
+stmt: LTF4(reg,reg)  ".error \x22 floating point not supported\x22 \n"  LBURG_MAX
+stmt: GEF4(reg,reg)  ".error \x22 floating point not supported\x22 \n"  LBURG_MAX
+stmt: GTF4(reg,reg)  ".error \x22 floating point not supported\x22 \n"  LBURG_MAX
+stmt: NEF4(reg,reg)  ".error \x22 floating point not supported\x22 \n"  LBURG_MAX
 ar:   ADDRGP4     "%a"
 ar:   ADDRLP4     "%a"
-reg:  CALLF4(ar)  ".error \u0022floating point not supported\u0022\n"  1
+reg:  CALLF4(ar)  ".error \x22 floating point not supported\x22 \n"  1
 reg:  CALLI4(ar)  "# emit2\n"  1
 reg:  CALLP4(ar)  "# emit2\n"  1
 reg:  CALLU4(ar)  "# emit2\n"  1
 stmt: CALLV(ar)   "# emit2\n"  1
 ar: reg    "%0"
 ar: CNSTP4  "%a"   
-stmt: RETF4(reg)  ".error \u0022floating point not supported\u0022\n"  1
+stmt: RETF4(reg)  ".error \x22 floating point not supported\x22 \n"  1
 stmt: RETI4(reg)  "# ret\n"  1
 stmt: RETU4(reg)  "# ret\n"  1
 stmt: RETP4(reg)  "# ret\n"  1
 stmt: RETV(reg)   "# ret\n"  1
-stmt: ARGF4(reg)  ".error \u0022floating point not supported\u0022\n"  LBURG_MAX
-stmt: ARGI4(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  LBURG_MAX
-stmt: ARGP4(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  LBURG_MAX
-stmt: ARGU4(reg)  ".error \u0022function call arguments not yet implemented\u0022\n"  LBURG_MAX
+stmt: ARGF4(reg)  ".error \x22 floating point not supported\x22 \n"  LBURG_MAX
+stmt: ARGI4(reg)  ".error \x22 function call arguments not yet implemented\x22 \n"  LBURG_MAX
+stmt: ARGP4(reg)  ".error \x22 function call arguments not yet implemented\x22 \n"  LBURG_MAX
+stmt: ARGU4(reg)  ".error \x22 function call arguments not yet implemented\x22 \n"  LBURG_MAX
 stmt: ARGI4(con)  "# emit2\n"  
 stmt: ARGP4(con)  "# emit2\n"  
 stmt: ARGU4(con)  "# emit2\n"  
@@ -624,13 +624,13 @@ static void space(int n) {
 }
 
 static void blkloop(int dreg, int doff, int sreg, int soff, int size, int tmps[]) {
-	print (".error \u0022blkloop not implemnted yet\u0022\n");
+	print (".error \x22 blkloop not implemnted yet\x22 \n");
 }
 static void blkfetch(int size, int off, int reg, int tmp) {
-	print (".error \u0022blkfetch not implemnted yet\u0022\n");
+	print (".error \x22 blkfetch not implemnted yet\x22 \n");
 }
 static void blkstore(int size, int off, int reg, int tmp) {
-	print (".error \u0022blkstore not implemnted yet\u0022\n");
+	print (".error \x22 blkstore not implemnted yet\x22 \n");
 
 }
 static void stabinit(char *, int, char *[]);
