@@ -16,7 +16,7 @@
     along with this program in the doc/COPYING file.
 	If not, see <https://www.gnu.org/licenses/>.
 
-	This notice applies only to this file.  Most of lcc is governed by 
+	This notice applies only to this file.  Most of lcc is governed by
 	a different license which can be found in the CPYRIGHT file in the
 	root directory of the source code.
 */
@@ -336,12 +336,12 @@ static void progbeg(int argc, char *argv[]) {
         }
 
         parseflags(argc, argv);
- 
+
         for (i = 0; i < 3; i++)
                 ireg[i]  = mkreg("r%d", i, /*mask*/1, /*set*/IREG);
         iregw  = mkwildcard(ireg);
-        tmask[IREG] = TMASKIREG; 
-        vmask[IREG] = VMASKIREG; 
+        tmask[IREG] = TMASKIREG;
+        vmask[IREG] = VMASKIREG;
 		tmask[FREG] = 0;
 		vmask[FREG] = 0;
 }
@@ -365,7 +365,7 @@ static void target(Node p) {
 		/* Even intrinsic functions return their value in R0 */
         setreg(p, ireg[0]);
         break;
- 
+
     case RET+I: case RET+U: case RET+P:
         rtarget(p, 0, ireg[0]);
         break;
@@ -464,8 +464,8 @@ static void emit2(Node p) {
 	static int argindex;
 	static char* argstring[6];
 
-	struct { const char * name; int addR0; int argcount; } 
-	 instr[] = { 
+	struct { const char * name; int addR0; int argcount; }
+	 instr[] = {
 		{ "adc",   1, 2 },
 		{ "halt",  0, 0 },
 		{ "i2c_rd",0, 4 },
@@ -485,7 +485,7 @@ static void emit2(Node p) {
 				if (0 == strcmp(instr[i].name, fnname)) {
 					print("%s ", instr[i].name);
 					if (instr[i].addR0)
-						print("R0 ");
+						print("r0,");
 					for (j=0; j < instr[i].argcount; j++) {
 						print(argstring[j]);
 						if (j < instr[i].argcount -1)
@@ -497,10 +497,10 @@ static void emit2(Node p) {
 			argindex = 0;
 			break;
 
-		case ARG+I: case ARG+P: case ARG+U: 
+		case ARG+I: case ARG+P: case ARG+U:
 		{
 			int rulenum;
-			
+
 			/* Emulate what emitasm() does for "%0" */
 			rulenum = _rule(p->x.state, /*nt*/ p->x.inst);
 			argstring[argindex++] = emitasmtostring(p->kids[0], _nts[rulenum][0]);
@@ -527,9 +527,9 @@ static void local(Symbol p) {
 		space(p->type->size);
 
 		if (oldseg != BSS)
-			segment(oldseg);	
+			segment(oldseg);
 	}
-            
+
 }
 
 static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls) {
@@ -728,4 +728,3 @@ Interface ulpIR = {
 
         }
 };
-
