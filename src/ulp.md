@@ -485,7 +485,7 @@ static void emit2(Node p) {
 				if (0 == strcmp(instr[i].name, fnname)) {
 					print("%s ", instr[i].name);
 					if (instr[i].addR0)
-						print("R0 ");
+						print("r0,");
 					for (j=0; j < instr[i].argcount; j++) {
 						print(argstring[j]);
 						if (j < instr[i].argcount -1)
