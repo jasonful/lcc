@@ -16,6 +16,10 @@ install it from [here](https://docs.espressif.com/projects/esp-idf/en/latest/get
 1. Build foo.S as you normally would a hand-written .S file.
 1. Globals in foo.c are exported with a ulp_ prefix just like .globals in a foo.S.
 
+### Build from code
+1. `mkdir build`
+1. `make all`
+
 ### Not supported:
 1. Floating point
 1. Signed arithmetic.  Despite what some parts of the documentation may imply, the ULP coprocessor has no support for signed arithmetic.  
