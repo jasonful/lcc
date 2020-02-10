@@ -35,6 +35,10 @@ machine instructions take constants.
 
 See %ULPCCDIR%\inc\ulp_c.h for details.
 
+You can also call the pseudo-function `include` with a numeric argument.  For example:
+`include (1);`
+will generate `.include "1.S"` in the .S file, allowing you to include assembly code from other files.
+
 ### Notes:
 1. The compiler automatically inserts a `halt` at the end of entry().
 1. When something is not supported, I try to generate a friendly error message in the .S file. 
