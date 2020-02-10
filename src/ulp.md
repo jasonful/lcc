@@ -494,6 +494,11 @@ static void emit2(Node p) {
 					print("\n");
 				}
 			}
+			if (0 == strcmp("include", fnname)) {
+				print(".include \"");
+				print(argstring[0]);
+				print(".S\"\n");
+			}
 			argindex = 0;
 			break;
 
