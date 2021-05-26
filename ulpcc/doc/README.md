@@ -1,8 +1,7 @@
 ### What is ulpcc?
 A C compiler targeting the ULP coprocessor on the ESP32 chip.  It is based on the lcc compiler written by David Hanson and Chris Fraser.  The code-generator for the ULP was written by Jason Fuller (me), and all bugs are mine.
 
-### Installation
-Currently only Windows is supported.  (Lcc is compilable under Linux, but I haven't taken the time to get it to work.)
+### Installation on Windows
 
 1. Download [https://github.com/jasonful/lcc/raw/master/ulpcc.zip](https://github.com/jasonful/lcc/raw/master/ulpcc.zip) 
 and extract to a directory of your choosing
@@ -10,6 +9,13 @@ and extract to a directory of your choosing
 1. set IDF_PATH to where you installed the ESP IDF.  (If you do not have it installed on your Windows machine, 
 install it from [here](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/windows-setup.html).)
 1. set PATH=%PATH%;%ULPCCDIR%\bin
+
+### Installation on Linux (tested on Ubuntu 20.04)
+1. cd ~
+1. git clone https://github.com/jasonful/lcc.git
+1. cd lcc
+1. source ~/lcc/doc/lccenv.sh
+1. buildlcc
 
 ### Usage
 1. `ulpcc foo.c` will generate foo.S
