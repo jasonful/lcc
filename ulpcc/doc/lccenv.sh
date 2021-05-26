@@ -6,6 +6,10 @@ LCCGITDIR=~/lcc
 export BUILDDIR=$LCCGITDIR/build 
 export ULPCCDIR=$LCCGITDIR/ulpcc
 export LCCDIR=$BUILDDIR
+mkdir -p $BUILDDIR
+
+# See lcc/doc/install.html for why we do this
+ln -s /usr/bin $BUILDDIR/gcc
 
 function buildlcc {
     cd $LCCGITDIR

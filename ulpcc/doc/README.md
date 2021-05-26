@@ -14,7 +14,7 @@ install it from [here](https://docs.espressif.com/projects/esp-idf/en/latest/get
 1. cd ~
 1. git clone https://github.com/jasonful/lcc.git
 1. cd lcc
-1. source ~/lcc/doc/lccenv.sh
+1. source ~/lcc/ulpcc/doc/lccenv.sh
 1. buildlcc
 
 ### Usage
