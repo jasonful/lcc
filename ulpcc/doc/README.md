@@ -31,6 +31,7 @@ This means you should always use `unsigned int` (or `unsigned`) instead of `int`
 	implementing this will take some thought.
 	For now, hopefully this won't be a problem since most ULP programs are pretty short.
 1. Strings.  The ULP coprocessor cannot access individual bytes.
+1. Arrays of structures.  Calculating offsets requires multiplication, which is not supported.
 
 ### Pseudo-functions
 You can call the following ULP instructions as if they were functions: 
